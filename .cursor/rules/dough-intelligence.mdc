@@ -1,0 +1,95 @@
+---
+description: Dough Intelligence Engine（DIE）の設計思想・入出力・Learning・品質要件。
+alwaysApply: true
+---
+
+# Dough Intelligence Engine（DIE）
+
+Pizza-Lab の中核。**すべての生地計算は DIE のみ。**  
+仕様: `PIZZALAB_MASTER.md` §4 / スキーマ: `docs/schemas/die-input.schema.json`
+
+## 基本思想
+
+- DIE は **唯一の計算エンジン** — Quick / Lab 共通、UI・AI は計算しない
+- 必ず DIE で計算: **配合、推奨水温、氷量、予想生地温、摩擦、発酵補正、イースト補正**
+- **AI は数値計算禁止** — 説明・提案・Knowledge のみ（`lib/ai/`）
+- 実装場所: **`lib/die/` のみ**
+
+## データフロー
+
+```
+QuickModeRequest | LabModeRequest
+  → lib/defaults/（プロファイル + マスタ補完）
+    → DieResolvedInput
+      → lib/die/（計算）
+        → DieOutput
+          → lib/learning/（実測記録時のみ）
+```
+
+## 入力（DieResolvedInput に解決後）
+
+| カテゴリ | 項目 |
+|----------|------|
+| 材料 | 粉（単品/ブレンド）、粉温、水、塩、イースト種・量 |
+| 環境 | 室温、湿度、外気温（天気API） |
+| 温度 | 目標生地温（DDT）、水温（null→逆算） |
+| ミキサー | 種別、機種、低速/高速時間、回転数 |
+| 製法 | 製法、加水率、塩率、発酵方針 |
+| バッチ | 作る枚数、1枚重量 |
+| モード | Quick（最小入力+プロファイル）/ Lab（全項目上書き） |
+| プロファイル | 店舗・用途プリセットから補完（`docs/defaults-fallback.md`） |
+
+未入力・`unknown` → エラーにせず補完。`fieldResolution` で取得元を記録。
+
+## 出力（DieOutput）
+
+| 出力 | 内容 |
+|------|------|
+| 配合 | 粉・水・塩・酵母・油（g）、Baker's % |
+| 推奨水温 | DDT 4要素逆算 |
+| 氷量 | 推奨水温 < 4°C 時 |
+| 予想生地温 | 正算 |
+| 摩擦温度 | base + manual + learned |
+| 発酵スケジュール | 開始・使用時刻、時間補正 |
+| イースト補正 | 温度差に基づく ±% |
+| 信頼度 | 高/中/低（推定項目数 × Run 数） |
+
+## 核心計算式
+
+```
+目標DDT = (粉温 + 有効水温 + 室温 + 摩擦) / 4
+推奨水温 = 目標DDT × 4 − 粉温 − 室温 − 摩擦予測
+最終摩擦 = master.friction + shop.manualOffset + learning.learnedOffset
+```
+
+## Learning 連携
+
+- **店舗ごと**に学習（`shopId` + ミキサーキー）
+- **実測生地温を最優先** — Run 記録 → 摩擦誤差の移動平均
+- Run 5+ で学習補正適用 / Run 20+ で信頼度「高」
+- **店舗間で共有・漏洩しない** — グローバル master は出発点のみ
+
+## 品質要件
+
+| 要件 | 内容 |
+|------|------|
+| Pure Function | 同入力 → 同出力。副作用なし |
+| 決定論 | LLM・乱数・時刻依存なし（発酵時刻計算除く） |
+| 再現性 100% | Run 記録の `resolvedInput` で再計算可能 |
+| テスト可能 | `lib/die/*.test.ts` 必須。UI テストに計算を書かない |
+
+## 禁止
+
+```
+❌ コンポーネント/API route 内の配合・水温計算
+❌ LLM/AI による数値出力
+❌ DIE を迂回する Quick/Lab 専用計算
+❌ Learning データの shop スコープ外参照
+❌ 推定値を「確定値」として返す（信頼度必須）
+```
+
+## モジュール分割（lib/die/）
+
+`recommend.ts` 水温逆算 / `friction.ts` / `ice.ts` / `yeast-adjust.ts` / `fermentation-adjust.ts` / `recipe.ts`（Baker's %）
+
+補完は `lib/defaults/`、学習は `lib/learning/` — **DIE に混ぜない。**

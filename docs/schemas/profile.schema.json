@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pizza-lab.dev/schemas/profile.schema.json",
+  "title": "Pizza-Lab Profile Schema",
+  "description": "店舗プロファイル・用途別プロファイルの設計スキーマ。実装前の設計正本。",
+  "version": "0.1.0",
+
+  "definitions": {
+
+    "MixerType": {
+      "type": "string",
+      "enum": ["hand", "spiral", "fork", "double_arm", "unknown"],
+      "description": "ミキサー種別。unknown は「わからない」を許容。"
+    },
+
+    "MethodType": {
+      "type": "string",
+      "enum": ["napoli", "ny", "roma", "custom"],
+      "description": "製法。"
+    },
+
+    "YeastType": {
+      "type": "string",
+      "enum": ["dry", "fresh", "sourdough"],
+      "description": "イースト種類。dry=乾酵母, fresh=生酵母, sourdough=サワー。"
+    },
+
+    "PresetType": {
+      "type": "string",
+      "enum": ["business", "competition", "research"],
+      "description": "用途別プロファイル種別。business=営業, competition=大会, research=研究。"
+    },
+
+    "FermentationType": {
+      "type": "string",
+      "enum": ["room", "cold", "mixed"],
+      "description": "発酵方針。room=常温, cold=冷蔵, mixed=混合。"
+    },
+
+    "UnknownOrNumber": {
+      "description": "数値または「わからない」。null は未設定を意味し、補完ロジックが適用される。",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string", "const": "unknown" },
+        { "type": "null" }
+      ]
+    },
+
+    "UnknownOrString": {
+      "description": "文字列または「わからない」。",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "string", "const": "unknown" },
+        { "type": "null" }
+      ]
+    },
+
+    "FlourSettings": {
+      "type": "object",
+      "description": "粉の基本設定。初回セットアップで登録。",
+      "required": ["primaryFlourId"],
+      "properties": {
+        "primaryFlourId": {
+          "type": "string",
+          "description": "flour-master.json の粉 ID。"
+        },
+        "defaultFlourTemp": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "粉温デフォルト (°C)。未設定時は外気温 + 2°C。"
+        },
+        "proteinPercent": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "タンパク質 (%)。flour-master から自動取得可。"
+        },
+        "wValue": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "W値。flour-master から自動取得可。"
+        },
+        "absorptionFactor": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "吸水補正係数。flour-master から自動取得可。"
+        }
+      }
+    },
+
+    "MixerSettings": {
+      "type": "object",
+      "description": "ミキサーの基本設定。初回セットアップで登録。「わからない」許容。",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/MixerType"
+        },
+        "modelId": {
+          "type": ["string", "null"],
+          "description": "mixer-master.json の機種 ID。null または未設定時は種別平均を使用。"
+        },
+        "lowSpeedMin": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "低速時間 (分)。"
+        },
+        "highSpeedMin": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "高速時間 (分)。"
+        },
+        "lowRpm": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "低速回転数。"
+        },
+        "highRpm": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "高速回転数。"
+        },
+        "manualFrictionOffset": {
+          "type": "number",
+          "default": 0,
+          "description": "手動摩擦補正 (°C)。Lab Mode で調整。"
+        }
+      }
+    },
+
+    "MethodSettings": {
+      "type": "object",
+      "description": "製法の基本設定。",
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "$ref": "#/definitions/MethodType"
+        },
+        "hydrationPercent": {
+          "type": "number",
+          "minimum": 50,
+          "maximum": 100,
+          "description": "加水率 (% Baker's)。"
+        },
+        "saltPercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "塩 (% Baker's)。"
+        },
+        "yeastType": {
+          "$ref": "#/definitions/YeastType"
+        },
+        "yeastPercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "イースト (% Baker's)。"
+        },
+        "oilPercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 0,
+          "description": "油 (% Baker's)。任意。"
+        },
+        "ballWeightG": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 500,
+          "description": "1枚あたり生地重量 (g)。"
+        },
+        "fermentationType": {
+          "$ref": "#/definitions/FermentationType"
+        },
+        "fermentationHours": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120,
+          "description": "発酵時間 (時間)。"
+        }
+      }
+    },
+
+    "DdtSettings": {
+      "type": "object",
+      "description": "目標生地温の基本設定。",
+      "properties": {
+        "defaultDdt": {
+          "type": "number",
+          "minimum": 18,
+          "maximum": 30,
+          "description": "デフォルト目標生地温 (°C)。"
+        },
+        "summerDdt": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "夏季 DDT (°C)。未設定時は defaultDdt。"
+        },
+        "winterDdt": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "冬季 DDT (°C)。未設定時は defaultDdt。"
+        }
+      }
+    },
+
+    "PresetProfile": {
+      "type": "object",
+      "description": "用途別プロファイル。営業・大会・研究で同一構造、値のみ異なる。",
+      "required": ["id", "name", "type", "method", "targetDdt", "ballWeightG"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "プロファイル ID（UUID）。"
+        },
+        "name": {
+          "type": "string",
+          "description": "表示名。例: 平日営業, VPN大会, 粉テスト。",
+          "maxLength": 40
+        },
+        "type": {
+          "$ref": "#/definitions/PresetType"
+        },
+        "method": {
+          "$ref": "#/definitions/MethodSettings"
+        },
+        "targetDdt": {
+          "type": "number",
+          "minimum": 18,
+          "maximum": 30,
+          "description": "目標生地温 (°C)。"
+        },
+        "ballWeightG": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 500,
+          "description": "1枚あたり生地重量 (g)。"
+        },
+        "dnaId": {
+          "type": ["string", "null"],
+          "description": "紐づく Dough DNA ID。研究用のみ。Quick Mode では非表示。"
+        },
+        "isDefault": {
+          "type": "boolean",
+          "default": false,
+          "description": "Quick Mode 起動時のデフォルト選択。"
+        }
+      }
+    },
+
+    "LearningSummary": {
+      "type": "object",
+      "description": "Learning Engine の店舗別学習サマリー。",
+      "properties": {
+        "mixerKey": {
+          "type": "string",
+          "description": "mixer_type + model_id の複合キー。"
+        },
+        "runCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "記録 Run 数。"
+        },
+        "learnedFrictionOffset": {
+          "type": "number",
+          "description": "学習済み摩擦補正 (°C)。Run 5未満は 0。"
+        },
+        "isLearningComplete": {
+          "type": "boolean",
+          "description": "Run 5以上で true。"
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+
+    "ShopProfile": {
+      "type": "object",
+      "description": "店舗プロファイル。1店舗1つ。初回セットアップ（約5分）で登録。",
+      "required": ["id", "name", "flour", "mixer", "method", "ddt", "presets"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "店舗 ID（UUID）。"
+        },
+        "name": {
+          "type": "string",
+          "description": "店舗名。",
+          "maxLength": 60
+        },
+        "location": {
+          "type": "object",
+          "description": "所在地。外気温・湿度の自動取得用。",
+          "properties": {
+            "city": { "type": "string" },
+            "country": { "type": "string" },
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" }
+          }
+        },
+        "defaultPresetId": {
+          "type": "string",
+          "description": "Quick Mode 起動時に選択される用途プロファイル ID。"
+        },
+        "flour": {
+          "$ref": "#/definitions/FlourSettings"
+        },
+        "mixer": {
+          "$ref": "#/definitions/MixerSettings"
+        },
+        "method": {
+          "$ref": "#/definitions/MethodSettings"
+        },
+        "ddt": {
+          "$ref": "#/definitions/DdtSettings"
+        },
+        "presets": {
+          "type": "array",
+          "description": "用途別プロファイル一覧。最低1つ（営業用）必須。",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/PresetProfile"
+          }
+        },
+        "learning": {
+          "type": "array",
+          "description": "Learning Engine サマリー。",
+          "items": {
+            "$ref": "#/definitions/LearningSummary"
+          }
+        },
+        "setupCompletedAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "初回セットアップ完了日時。null は未完了。"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+
+    "QuickModeInput": {
+      "type": "object",
+      "description": "Quick Mode 毎日の入力。2〜4項目。",
+      "required": ["presetId", "pizzaCount"],
+      "properties": {
+        "presetId": {
+          "type": "string",
+          "description": "選択した用途プロファイル ID。"
+        },
+        "pizzaCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "作る枚数。"
+        },
+        "shopRoomTemp": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "今日の店舗室温 (°C)。任意。未入力時は補完。"
+        },
+        "memo": {
+          "type": ["string", "null"],
+          "maxLength": 100,
+          "description": "メモ。v0.1 では計算に不使用。"
+        }
+      }
+    },
+
+    "SetupWizardInput": {
+      "type": "object",
+      "description": "初回セットアップの最小入力。5分以内。",
+      "required": ["shopName", "primaryFlourId", "mixerType", "method", "targetDdt", "ballWeightG", "pizzaCountDaily"],
+      "properties": {
+        "shopName": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "city": { "type": "string" }
+          }
+        },
+        "primaryFlourId": {
+          "type": "string",
+          "description": "主力粉。flour-master から選択。"
+        },
+        "mixerType": {
+          "$ref": "#/definitions/MixerType",
+          "description": "「わからない」= unknown 可。"
+        },
+        "mixerModelId": {
+          "type": ["string", "null"],
+          "description": "任意。未入力可。"
+        },
+        "method": {
+          "$ref": "#/definitions/MethodType"
+        },
+        "targetDdt": {
+          "type": "number",
+          "minimum": 18,
+          "maximum": 30,
+          "description": "目標生地温。プリセット値から選択可。"
+        },
+        "hydrationPercent": {
+          "type": "number",
+          "description": "加水率。製法プリセットから自動設定可。"
+        },
+        "ballWeightG": {
+          "type": "number",
+          "description": "1枚重量 (g)。"
+        },
+        "pizzaCountDaily": {
+          "type": "integer",
+          "description": "1日の平均枚数。Quick Mode のデフォルト値に使用。"
+        }
+      }
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/definitions/ShopProfile" },
+    { "$ref": "#/definitions/PresetProfile" },
+    { "$ref": "#/definitions/QuickModeInput" },
+    { "$ref": "#/definitions/SetupWizardInput" }
+  ],
+
+  "examples": [
+    {
+      "description": "店舗プロファイル例",
+      "value": {
+        "id": "shop-001",
+        "name": "Pizzeria Napoli",
+        "location": { "city": "東京", "country": "JP" },
+        "defaultPresetId": "preset-business",
+        "flour": {
+          "primaryFlourId": "caputo-pizzeria",
+          "defaultFlourTemp": null
+        },
+        "mixer": {
+          "type": "spiral",
+          "modelId": null,
+          "lowSpeedMin": null,
+          "highSpeedMin": null
+        },
+        "method": {
+          "method": "napoli",
+          "hydrationPercent": 65,
+          "saltPercent": 2.5,
+          "yeastType": "dry",
+          "yeastPercent": 0.2,
+          "ballWeightG": 250,
+          "fermentationType": "cold",
+          "fermentationHours": 24
+        },
+        "ddt": {
+          "defaultDdt": 24,
+          "summerDdt": 24,
+          "winterDdt": 26
+        },
+        "presets": [
+          {
+            "id": "preset-business",
+            "name": "平日営業",
+            "type": "business",
+            "method": {
+              "method": "napoli",
+              "hydrationPercent": 65,
+              "saltPercent": 2.5,
+              "yeastType": "dry",
+              "yeastPercent": 0.2,
+              "ballWeightG": 250,
+              "fermentationType": "cold",
+              "fermentationHours": 24
+            },
+            "targetDdt": 24,
+            "ballWeightG": 250,
+            "isDefault": true
+          },
+          {
+            "id": "preset-competition",
+            "name": "VPN大会",
+            "type": "competition",
+            "method": {
+              "method": "napoli",
+              "hydrationPercent": 63,
+              "saltPercent": 2.8,
+              "yeastType": "fresh",
+              "yeastPercent": 2.0,
+              "ballWeightG": 230,
+              "fermentationType": "cold",
+              "fermentationHours": 48
+            },
+            "targetDdt": 23,
+            "ballWeightG": 230,
+            "isDefault": false
+          }
+        ],
+        "learning": [],
+        "setupCompletedAt": "2026-07-06T00:00:00Z",
+        "createdAt": "2026-07-06T00:00:00Z",
+        "updatedAt": "2026-07-06T00:00:00Z"
+      }
+    },
+    {
+      "description": "Quick Mode 毎日入力例",
+      "value": {
+        "presetId": "preset-business",
+        "pizzaCount": 40,
+        "shopRoomTemp": null,
+        "memo": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+---
+description: Method Intelligence。製法体系・公式知識・Preferment・DIE連携・AI境界。
+alwaysApply: true
+---
+
+# Method Intelligence
+
+世界中の製法を体系化し、**DIE が製法に応じた数値提案**を行う。  
+Method Intelligence は知識・分類・初期値を提供。計算は DIE のみ。
+
+仕様: `PIZZALAB_MASTER.md` / `data/method-presets.json` / `content/knowledge/`
+
+## 基本思想
+
+- 製法は **文化・地域・職人の100点** — 単一の正解を押し付けない（MANIFESTO 第2条）
+- **STG・VPN・APN** を公式技術体系として尊重するが、**STG のみを唯一の正解としない**
+- 世界各地の製法・職人・地域文化を **同等に尊重**
+- AI は製法の **説明・比較** のみ。数値は **DIE**
+
+## Official Methods（公式技術体系）
+
+| ID | 名称 | 位置づけ |
+|----|------|----------|
+| `stg` | STG（真のナポリピッツァ） | 公式。要約+出典+実践知 |
+| `vpn` | VPN（Verace Pizza Napoletana） | 公式規約準拠の参照体系 |
+| `apn` | APN（Associazione Pizzaiuoli Napoletani） | 公式規約準拠の参照体系 |
+
+```
+尊重する ≠ 強制する
+Quick/Lab ユーザーは STG/VPN/APN 以外の製法も選べる（napoli, ny, roma, custom, regional_*）
+```
+
+## 製法 taxonomy（拡張可能）
+
+```
+Method
+├── Official: stg | vpn | apn
+├── Regional: napoli | ny | roma | custom | …
+├── Preferment（前発酵）
+│   ├── biga
+│   ├── poolish
+│   ├── lievito_madre
+│   └── hybrid
+└── Process（工程）
+    ├── straight
+    ├── autolyse
+    ├── bench
+    └── punch
+```
+
+Preferment + Process + Official/Regional を組み合わせて **Method Profile** を構成。
+
+## method-presets.json が保持する知識
+
+| カテゴリ | 例 |
+|----------|-----|
+| 配合 | 加水率、塩、イースト、油 |
+| 温度 | 目標 DDT、季節補正 |
+| 発酵 | 種別、時間、温度帯 |
+| Preferment | 比率、時間、温度、ミキサー適性 |
+| Process | 工程順序、オートリーズ時間 |
+| 相性 | ミキサー種別、粉種（Mixer Intelligence 連携） |
+
+DIE 入力: `method`, `yeast`, `fermentation`, `temperature.targetDdtC` ← プロファイル / preset から解決。
+
+## Knowledge 階層
+
+```
+Tier 1: Official Methods（STG / VPN / APN）  ← 最上位
+Tier 2: Preferments & Processes
+Tier 3: Regional styles（napoli, ny, roma…）
+Tier 4: Troubleshooting / 実践知
+Tier 5: 店舗 Dough DNA（その店の100点）
+```
+
+### 公式知識の扱い
+
+| ✅ 許可 | ❌ 禁止 |
+|---------|---------|
+| 要約・実践知・パラメータ表 | 規約全文の無断転載 |
+| 出典・リンク・改定日の明記 | 公式を「唯一正解」と表示 |
+| 「VPN では〜、STG では〜」比較 | ユーザーの製法選択の否定 |
+
+配置: `content/knowledge/official/`（stg, vpn, apn）, `preferments/`, `processes/`
+
+## DIE 連携
+
+```
+Method Profile（preset / プロファイル）
+  → lib/defaults/（製法パラメータ補完）
+    → lib/die/（配合・DDT・発酵・イースト補正を数値計算）
+```
+
+- 製法変更 → 加水率・DDT・発酵時間の preset 切替
+- Preferment 選択 → イースト量・発酵スケジュール補正（ルール表、`lib/die/fermentation-adjust.ts`）
+- Process 選択 → 工程時間・ミキサー適性警告（Lab）
+
+## AI 境界
+
+| 許可 | 禁止 |
+|------|------|
+| STG/VPN/APN の説明・比較 | 配合・DDT・発酵時間の LLM 算出 |
+| Preferment/Process の選び方提案 | 公式規約の断章取り的「正解」提示 |
+| Knowledge 出典付き回答 | ユーザー製法の優劣判定 |
+
+Ask AI は **Tier 1〜4 を RAG コンテキスト**に。Tier 5（店舗 DNA）は Lab / プロファイル経由。
+
+## Quick / Lab
+
+| モード | 製法 UI |
+|--------|---------|
+| Quick | 用途プロファイルに固定。製法選択 UI なし |
+| Lab | Official / Regional / Preferment / Process を個別上書き可 |
+
+## 禁止
+
+```
+❌ STG をデフォルト唯一値として強制
+❌ 公式規約の全文コピー
+❌ AI による製法パラメータ生成
+❌ method-presets 外の散在マジックナンバー
+❌ 地域製法の「非公式」扱い・劣位表示
+```
+
+## 関連ファイル
+
+`data/method-presets.json` / `docs/schemas/profile.schema.json` / `docs/schemas/die-input.schema.json` / `content/knowledge/official/`
+
+新 Official Method 追加は **ADR + MASTER + Knowledge 出典** 必須。

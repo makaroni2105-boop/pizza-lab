@@ -1,0 +1,107 @@
+---
+description: Mixer Intelligence。ミキサー知識・摩擦・DIE連携・Learning・信頼度。
+alwaysApply: true
+---
+
+# Mixer Intelligence
+
+ミキサーは単なる機械ではなく、**生地品質を決定する要素**。  
+Mixer Intelligence が知識と初期値を提供し、**DIE が数値計算**する。AI は説明のみ。
+
+仕様: `PIZZALAB_MASTER.md` §9 / `data/mixer-master.json` / `docs/defaults-fallback.md`
+
+## DIE との関係
+
+```
+mixer-master.json（グローバル知識）
+  + 店舗プロファイル（機種・手動補正）
+    + Learning（店舗×ミキサー摩擦補正）
+      → lib/die/friction.ts → 水温・予想生地温・発酵補正
+```
+
+**AI はミキサー特性を説明できるが、摩擦・水温・生地温の数値は DIE のみ。**
+
+## 対応ミキサー種別
+
+| type | 名称 | 備考 |
+|------|------|------|
+| `hand` | 手ごね | 摩擦最小。時間ベース補正 |
+| `spiral` | スパイラル | ナポリで最も一般的 |
+| `fork` | フォーク | 低摩擦・短時間 |
+| `double_arm` | ダブルアーム | 高加水・大量仕込み向け |
+| `unknown` | わからない | スパイラル平均にフォールバック |
+
+**拡張可能構造** — 新種別は `mixer-master.json` の `types` に追加。ADR + MASTER 更新必須。
+
+## 各ミキサーが保持する知識（mixer-master）
+
+| カテゴリ | フィールド | DIE 用途 |
+|----------|------------|----------|
+| 基本特性 | 特徴、グルテン形成、酸化傾向 | Knowledge / Ask 説明 |
+| 熱・摩擦 | 摩擦係数、生地温上昇傾向 | **水温・予想生地温** |
+| 時間 | 推奨低速時間、推奨高速時間 | 摩擦予測 |
+| 適性 | 適正加水率、ビガ/ポーリッシュ/ストレート適性 | Lab 提案・警告 |
+| 相性 | オートリーズ、高加水、ナポリピッツァ | Lab 提案・Ask |
+| 学習 | learningTargetFields | Learning 補正対象 |
+
+機種（maker + model）は `models[]` に詳細を保持。種別は `types{}` に平均値。
+
+## 摩擦係数の解決順
+
+```
+1. models[modelId].friction     ← メーカー・型番が分かる場合（最優先）
+2. types[mixerType].avg_friction ← 種別平均
+3. types.unknown.avg_friction   ← わからない → スパイラル相当
++ shop.mixer.manualFrictionOffsetC   （Lab 手動）
++ learning.learnedFrictionOffsetC    （Run 5+、店舗資産）
+= effectiveFrictionC → DIE
+```
+
+## Learning
+
+- **店舗ごと** × **ミキサーキー**（type + modelId）で摩擦係数を学習
+- **実測生地温を最優先**: `実測摩擦 = 実測DDT×4 − 粉温 − 水温 − 室温`
+- 直近 N Run（20）の移動平均で `learnedFrictionOffsetC` を更新
+- **店舗間で共有しない**。他店の Run を参照しない
+- 型番不明 → 種別キーで学習。型番判明後は model キーに移行可
+
+## 「わからない」の扱い
+
+| 不明項目 | 補完 |
+|----------|------|
+| 種別 | `unknown` → spiral 平均 |
+| 機種 | 種別平均 |
+| 回転数・時間 | 種別プリセット |
+| Quick Mode | **UI に表示しない**。裏で補完 |
+
+## 信頼度
+
+推定値使用時は **必ず DieOutput.confidence を返す**。
+
+| 条件 | 信頼度 |
+|------|--------|
+| modelId 指定 + Run 20+ | 高 |
+| 種別のみ + Run 5+ | 中 |
+| unknown または Run 0 | 低 |
+
+摩擦ソースを `temperature.frictionSource`（master / learning / manual）で明示。
+
+## ファイル・責務
+
+| ファイル | 責務 |
+|----------|------|
+| `data/mixer-master.json` | グローバル知識（Layer 1） |
+| `lib/die/friction.ts` | 摩擦→DIE 計算（数値のみここ） |
+| `lib/learning/` | 店舗摩擦補正（Layer 3） |
+| `lib/ai/` | ミキサー特性の説明・相性アドバイス |
+| `content/knowledge/die/` | 職人向け解説 Markdown |
+
+## 禁止
+
+```
+❌ AI/LLM で摩擦係数・水温を算出
+❌ UI コンポーネント内の摩擦計算
+❌ mixer-master 外への散在したマジックナンバー
+❌ 新 master ファイルの独自追加（coding rule 参照）
+❌ 推定摩擦を確定値表示（信頼度・ソース必須）
+```

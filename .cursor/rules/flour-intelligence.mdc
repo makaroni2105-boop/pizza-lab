@@ -1,0 +1,122 @@
+---
+description: Flour Intelligence。粉の個性・Personality・ブレンド・DIE/DNA連携・Learning。
+alwaysApply: true
+---
+
+# Flour Intelligence
+
+粉はスペックではなく **個性（Personality）**。  
+Flour Intelligence が知識を提供し、**DIE が数値**、**DNA が理想**を定義する。
+
+仕様: `data/flour-master.json` / `docs/schemas/die-input.schema.json` / Method Intelligence（製法は別）
+
+## 最重要思想
+
+Pizza-Lab は **「最強の粉」を探すシステムではない**。
+
+```
+その店が目指す生地
+  × 職人が理想とする食感
+    × その日の条件
+      → 合う粉・ブレンドを提案
+```
+
+**粉に優劣はない。個性がある。** 特定粉を絶対最高と断言しない。
+
+## Flour Personality（各粉が持つ個性）
+
+| 軸 | 属性 |
+|----|------|
+| 物理 | 伸展性、弾力、吸水性、軽さ、もち感、サク感 |
+| 感官 | 焼色、香り、歯切れ |
+| 構造 | コルニチョーネ形成、焼成耐性、高温適性 |
+| 発酵 | 長時間発酵適性、短時間発酵適性 |
+| 工程 | ビガ適性、ポーリッシュ適性、ストレート適性、オートリーズ適性 |
+
+Lab / Ask で説明。DIE には **数値化された係数**（吸水係数、W値等）のみ渡す。
+
+## flour-master.json が保持する情報
+
+```
+maker, brand, name, type
+wValue, proteinPercent, ashPercent
+recommendedHydrationPct, absorptionFactor
+recommendedUse, characteristics
+personality: { 上記 Personality スコア 0-100 }
+learningTargetFields
+```
+
+初期候補（拡張可能）: Caputo Saccorosso / Cuoco / Nuvola / Nuvola Super / Doppia Esse / Le 5 Stagioni / Petra / Molini Pizzuti / 国産小麦 / other
+
+## DIE 連携
+
+```
+flour-master（Layer 1）
+  + 店舗プロファイル（主力粉）
+    + Learning（店舗×粉の吸水・挙動補正）
+      → lib/die/（有效吸水率 → 加水率・配合）
+```
+
+- Quick: 主力粉 100%。UI に粉選択なし
+- Lab: `FlourBlendInput`（最大5種、`ratioPct` 合計 100）
+- 有效粉温・吸水係数 → `DieResolvedInput.flour.effective*`
+
+## 粉ブレンド（Lab 専用）
+
+```
+目指す Dough DNA
+  ↓ 目指す食感（Personality ターゲット）
+    ↓ 目指す焼き上がり
+      → lib/blend/（比率提案）
+        → DIE（配合・DDT 逆算）
+```
+
+- v0.1: flour-master スペックから **線形補間**（決定論）
+- v0.2+: AI は **候補説明・比較** のみ。比率の数値は `lib/blend/` → DIE
+
+**粉 100% 前提にしない。** ブレンドは標準機能。
+
+## Dough DNA 連携
+
+DNA の `gluten_strength`, `extensibility`, `chewiness`, `oven_spring` と Flour Personality をマッピング。  
+**その店の100点** に近い粉・比率を逆算。普遍正解の DNA を押し付けない。
+
+## Learning — 店舗資産
+
+- **「この粉はうちではこうなる」** を店舗×粉で学習
+- 補正例: 吸水係数オフセット、実測挙動メモ（Run 紐づけ）
+- **世界共通の正解を押し付けない**。他店データを参照しない
+- グローバル flour-master は出発点（Layer 1）のみ
+
+## AI 境界
+
+| 許可 | 禁止 |
+|------|------|
+| 粉の特徴・Personality 説明 | 配合・加水率・ブレンド比率の LLM 算出 |
+| ブレンド候補の比較・理由 | 「この粉が最高」断言 |
+| Knowledge 出典付き回答 | 粉スペックのみでの最終判断 |
+
+## Method Intelligence との境界
+
+| Flour Intelligence | Method Intelligence |
+|--------------------|---------------------|
+| 粉の個性・吸水・ブレンド | STG/VPN/APN・Preferment・Process |
+| flour-master.json | method-presets.json |
+| **混同しない** — 粉適性と製法規約は別レイヤー |
+
+## 禁止
+
+```
+❌ 特定粉を絶対最高と断言
+❌ STG/APN 公式製法と粉評価を混同
+❌ W値・タンパク質だけで最終判断（Personality 無視）
+❌ AI による配合・比率計算
+❌ flour-master 外への散在マジックナンバー
+❌ Quick Mode に粉・ブレンド選択 UI
+```
+
+## 関連ファイル
+
+`data/flour-master.json` / `lib/blend/`（v0.2） / `lib/dna/` / `content/knowledge/blend/` / `types/blend.ts`
+
+新粉追加は master 更新 + Personality スコア定義必須。

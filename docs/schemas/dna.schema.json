@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pizza-lab.dev/schemas/dna.schema.json",
+  "title": "Pizza-Lab Dough DNA Schema",
+  "description": "その店だけの100点を表現する Dough DNA の正式スキーマ。優劣ではなく個性。世界共通評価なし。",
+  "version": "0.1.0",
+
+  "definitions": {
+
+    "DNAPresetType": {
+      "type": "string",
+      "enum": ["business", "competition", "research"],
+      "description": "営業 / 大会 / 研究"
+    },
+
+    "DNAKey": {
+      "type": "string",
+      "enum": [
+        "lightness",
+        "chewiness",
+        "bite",
+        "extensibility",
+        "elasticity",
+        "aroma",
+        "crustColor",
+        "bakeTolerance",
+        "cornicioneForm",
+        "airiness",
+        "centerTexture",
+        "crustTexture",
+        "mouthfeel",
+        "digestibility",
+        "crispness",
+        "moistness",
+        "reheatTolerance"
+      ]
+    },
+
+    "DNAScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "0-100。その店の100点基準。グローバル正解値ではない。"
+    },
+
+    "DNAScores": {
+      "type": "object",
+      "description": "DNA 全項目スコア。未設定項目は null 可（段階的定義）。",
+      "properties": {
+        "lightness": { "$ref": "#/definitions/DNAScore" },
+        "chewiness": { "$ref": "#/definitions/DNAScore" },
+        "bite": { "$ref": "#/definitions/DNAScore" },
+        "extensibility": { "$ref": "#/definitions/DNAScore" },
+        "elasticity": { "$ref": "#/definitions/DNAScore" },
+        "aroma": { "$ref": "#/definitions/DNAScore" },
+        "crustColor": { "$ref": "#/definitions/DNAScore" },
+        "bakeTolerance": { "$ref": "#/definitions/DNAScore" },
+        "cornicioneForm": { "$ref": "#/definitions/DNAScore" },
+        "airiness": { "$ref": "#/definitions/DNAScore" },
+        "centerTexture": { "$ref": "#/definitions/DNAScore" },
+        "crustTexture": { "$ref": "#/definitions/DNAScore" },
+        "mouthfeel": { "$ref": "#/definitions/DNAScore" },
+        "digestibility": { "$ref": "#/definitions/DNAScore" },
+        "crispness": { "$ref": "#/definitions/DNAScore" },
+        "moistness": { "$ref": "#/definitions/DNAScore" },
+        "reheatTolerance": { "$ref": "#/definitions/DNAScore" }
+      },
+      "additionalProperties": false
+    },
+
+    "DNATargetParams": {
+      "type": "object",
+      "description": "DNA から DIE へ渡す導出目標値（DIE が逆算の起点）。",
+      "properties": {
+        "hydrationPct": { "type": "number", "minimum": 50, "maximum": 100 },
+        "targetDdtC": { "type": "number", "minimum": 18, "maximum": 30 },
+        "saltPct": { "type": "number" },
+        "yeastType": { "type": "string", "enum": ["dry", "fresh", "sourdough"] },
+        "yeastPct": { "type": "number" },
+        "fermentationType": { "type": "string", "enum": ["room", "cold", "mixed"] },
+        "fermentationHours": { "type": "number" },
+        "methodId": { "type": "string" },
+        "prefermentId": {
+          "type": ["string", "null"],
+          "enum": ["biga", "poolish", "lievito_madre", "hybrid", null]
+        }
+      }
+    },
+
+    "DNALearningRecord": {
+      "type": "object",
+      "description": "Learning による DNA 更新記録。",
+      "required": ["source", "updatedAt"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["craftsman-self-eval", "run-actual", "photo-analysis", "manual"],
+          "description": "AI 自動確定は将来も craftsman 確認必須。"
+        },
+        "runId": { "type": ["string", "null"] },
+        "photoId": { "type": ["string", "null"] },
+        "previousScores": { "$ref": "#/definitions/DNAScores" },
+        "updatedScores": { "$ref": "#/definitions/DNAScores" },
+        "craftsmanConfirmed": {
+          "type": "boolean",
+          "description": "職人確認済みか。"
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "DoughDNA": {
+      "type": "object",
+      "description": "店舗 Dough DNA プロファイル。shopId 必須。",
+      "required": ["id", "shopId", "name", "presetType", "scores", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "description": "DNA プロファイル UUID。" },
+        "shopId": { "type": "string", "description": "店舗 ID。他店参照禁止。" },
+        "name": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "例: 平日営業の理想, VPN大会2026"
+        },
+        "presetType": { "$ref": "#/definitions/DNAPresetType" },
+        "presetId": {
+          "type": ["string", "null"],
+          "description": "profile.schema PresetProfile.id へのリンク。"
+        },
+        "scores": { "$ref": "#/definitions/DNAScores" },
+        "targetParams": {
+          "$ref": "#/definitions/DNATargetParams",
+          "description": "DIE 逆算用導出値。scores から lib/dna/ が算出。"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "職人によるその店100点の言語説明。"
+        },
+        "isDefault": {
+          "type": "boolean",
+          "default": false,
+          "description": "用途プリセットのデフォルト DNA。"
+        },
+        "learningHistory": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DNALearningRecord" }
+        },
+        "linkedFlourIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Flour Intelligence ブレンド候補。"
+        },
+        "linkedMixerKey": {
+          "type": ["string", "null"],
+          "description": "Mixer Intelligence キー。"
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "DNASnapshot": {
+      "type": "object",
+      "description": "DoughRun 記録時の DNA スナップショット。",
+      "required": ["dnaId", "scores", "capturedAt"],
+      "properties": {
+        "dnaId": { "type": "string" },
+        "scores": { "$ref": "#/definitions/DNAScores" },
+        "targetParams": { "$ref": "#/definitions/DNATargetParams" },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "DNAKeyLabels": {
+      "type": "object",
+      "description": "UI 表示用ラベル（参照データ）。",
+      "properties": {
+        "lightness": { "type": "object", "properties": { "ja": { "type": "string" }, "en": { "type": "string" } } },
+        "chewiness": { "type": "object", "properties": { "ja": { "type": "string" } } },
+        "cornicioneForm": { "type": "object", "properties": { "ja": { "type": "string" } } }
+      }
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/definitions/DoughDNA" },
+    { "$ref": "#/definitions/DNASnapshot" },
+    { "$ref": "#/definitions/DNALearningRecord" }
+  ],
+
+  "examples": [
+    {
+      "description": "営業用 DNA 例",
+      "value": {
+        "id": "dna-business-001",
+        "shopId": "shop-001",
+        "name": "平日営業の理想",
+        "presetType": "business",
+        "presetId": "preset-business",
+        "scores": {
+          "lightness": 70,
+          "chewiness": 65,
+          "bite": 60,
+          "extensibility": 75,
+          "elasticity": 70,
+          "aroma": 80,
+          "crustColor": 75,
+          "bakeTolerance": 70,
+          "cornicioneForm": 85,
+          "airiness": 80,
+          "centerTexture": 55,
+          "crustTexture": 70,
+          "mouthfeel": 75,
+          "digestibility": 70,
+          "crispness": 60,
+          "moistness": 65,
+          "reheatTolerance": 50
+        },
+        "targetParams": {
+          "hydrationPct": 65,
+          "targetDdtC": 24,
+          "saltPct": 2.5,
+          "yeastType": "dry",
+          "yeastPct": 0.2,
+          "fermentationType": "cold",
+          "fermentationHours": 24,
+          "methodId": "napoli"
+        },
+        "description": "コルニチョーネ高め、中心はソフト。うちの100点。",
+        "isDefault": true,
+        "learningHistory": [],
+        "createdAt": "2026-07-06T00:00:00Z",
+        "updatedAt": "2026-07-06T00:00:00Z"
+      }
+    }
+  ]
+}

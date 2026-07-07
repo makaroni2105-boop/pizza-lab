@@ -1,0 +1,79 @@
+---
+description: Pizza-Lab アーキテクチャ。2モード・DIE中心・データフロー・レイヤー規約。
+alwaysApply: true
+---
+
+# Pizza-Lab Architecture
+
+**最優先仕様書:** `PIZZALAB_MASTER.md` — 矛盾時は MASTER が正。  
+補助: `MANIFESTO.md`, `docs/`, `docs/schemas/`, `docs/adr/`
+
+## システム中心
+
+**Dough Intelligence Engine（DIE）** が唯一の計算核。Quick / Lab は同一 DIE、UI と入力深度のみ分離（ADR 001）。
+
+```
+Profile（店舗・用途プリセット）
+  → DIE（水温・氷・摩擦・配合・発酵の逆算/正算）
+    → Learning（実測生地温 → 摩擦補正、店舗資産）
+      → Dough DNA（その店の理想生地、Lab 専用）
+        → Knowledge（説明・参照、Markdown）
+```
+
+## 2モード
+
+| | Quick Mode | Lab Mode |
+|--|------------|----------|
+| 目的 | 今日のレシピ、**30秒以内** | 研究・分析・実験 |
+| 入力 | 2〜4項目（プロファイル+枚数） | DIE 全項目・粉ブレンド・DNA |
+| UI | `app/quick/` スマホ・片手・1画面 | `app/lab/` 詳細上書き |
+| 新機能 | Quick を複雑化しない | Lab / v0.2+ に配置 |
+
+## レイヤー規約
+
+```
+app/quick/ | app/lab/     UI（モード別）
+app/api/die/             API 境界
+lib/die/                 DIE コア（純粋関数、AI禁止）
+lib/defaults/            「わからない」補完（docs/defaults-fallback.md）
+lib/learning/            Learning Engine（店舗×ミキサー摩擦）
+lib/dna/ | lib/blend/    Lab 専用（v0.2+）
+lib/ai/                  説明・提案のみ（計算禁止）
+lib/knowledge/           Markdown 検索（Vector DB は v0.1 不要）
+data/*-master.json       グローバル初期値（Layer 1）
+content/knowledge/       人間編集 Knowledge ソース
+```
+
+## データ補完（必須）
+
+未入力・`unknown` はエラーにしない。順序:
+
+`ユーザー入力 → 店舗プロファイル → マスタ JSON → Learning 補正`
+
+スキーマ: `docs/schemas/profile.schema.json`, `die-input.schema.json`
+
+## AI の境界
+
+| AI してよい | AI 禁止 |
+|-------------|---------|
+| Ask 説明、トラブル相談 | 水温・氷量・配合・摩擦・発酵の算出 |
+| Knowledge 要約 | Learning 摩擦係数の推定 |
+| 粉ブレンド提案（v0.2+） | Quick Mode 必須入力の増加 |
+
+## 新機能チェックリスト
+
+- [ ] MASTER / ADR と矛盾しないか
+- [ ] DIE を迂回していないか（計算は `lib/die/` 経由）
+- [ ] Quick の入力・タップ数が増えていないか
+- [ ] 未入力を許容し信頼度を返すか
+- [ ] Learning データは shop 単位で隔離されているか
+- [ ] スマホファースト（48px タップ、親指ゾーン、縦固定）
+
+## フォルダ追加時
+
+| 追加先 | 条件 |
+|--------|------|
+| `lib/die/` | 全モード共通の計算 |
+| `lib/quick/` | Quick 入力縮約のみ |
+| `app/lab/` | Lab 専用 UI・DNA・ブレンド |
+| `lib/ai/` | 説明系のみ。DIE 結果をコンテキスト入力 |

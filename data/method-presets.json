@@ -1,0 +1,303 @@
+{
+  "version": "0.1.0",
+  "updatedAt": "2026-07-06T00:00:00Z",
+  "learningTargetFields": [
+    "fermentationHours",
+    "yeastPct"
+  ],
+  "officialMethods": {
+    "stg": {
+      "id": "stg",
+      "label": { "ja": "STG（真のナポリピッツァ）", "en": "STG (True Neapolitan Pizza)", "it": "STG (Vera Pizza Napoletana STG)" },
+      "summary": {
+        "ja": "伝統的ナポリピッツァの技術体系。Pizza-Labは要約と実践知として参照。唯一の正解ではない。",
+        "en": "Traditional Neapolitan pizza framework. Referenced as summary and practice notes, not as sole truth."
+      },
+      "sources": [
+        {
+          "name": "STG - Vera Pizza Napoletana STG",
+          "url": "https://www.verapizzanapoletana.org/",
+          "note": "要約のみ。規約全文は転載しない。"
+        }
+      ],
+      "knowledgeEntryIds": ["official-stg-overview"],
+      "referenceParams": {
+        "ballWeightG": { "min": 200, "max": 280 },
+        "targetDdtC": { "min": 20, "max": 24 },
+        "hydrationPct": { "min": 58, "max": 65 },
+        "ovenTempC": 485
+      },
+      "isMandatoryDefault": false
+    },
+    "vpn": {
+      "id": "vpn",
+      "label": { "ja": "VPN（Verace Pizza Napoletana）", "en": "VPN (Verace Pizza Napoletana)", "it": "VPN" },
+      "summary": {
+        "ja": "VPN規約に基づくナポリピッツァの参照体系。DIE初期値の強制ではない。",
+        "en": "Reference framework based on VPN regulations. Not enforced as DIE defaults."
+      },
+      "sources": [
+        {
+          "name": "Associazione Verace Pizza Napoletana - Disciplinare",
+          "url": "https://www.pizzavpn.it/",
+          "note": "要約のみ。規約全文は転載しない。"
+        }
+      ],
+      "knowledgeEntryIds": ["official-vpn-overview"],
+      "referenceParams": {
+        "ballWeightG": { "min": 200, "max": 280 },
+        "targetDdtC": { "min": 20, "max": 24 },
+        "hydrationPct": { "min": 58, "max": 65 },
+        "ovenTempC": 485
+      },
+      "isMandatoryDefault": false
+    },
+    "apn": {
+      "id": "apn",
+      "label": { "ja": "APN（Associazione Pizzaiuoli Napoletani）", "en": "APN", "it": "APN" },
+      "summary": {
+        "ja": "ナポリピッツァイウォリ協会の技術・文化参照。尊重するが強制しない。",
+        "en": "Technical and cultural reference from APN. Respected, not mandatory."
+      },
+      "sources": [
+        {
+          "name": "Associazione Pizzaiuoli Napoletani",
+          "url": "https://www.pizzaiuolinapoli.net/",
+          "note": "要約のみ。規約全文は転載しない。"
+        }
+      ],
+      "knowledgeEntryIds": ["official-apn-overview"],
+      "referenceParams": {
+        "ballWeightG": { "min": 200, "max": 280 },
+        "targetDdtC": { "min": 20, "max": 24 },
+        "hydrationPct": { "min": 58, "max": 65 },
+        "ovenTempC": 480
+      },
+      "isMandatoryDefault": false
+    }
+  },
+  "regionalMethods": {
+    "napoli": {
+      "id": "napoli",
+      "label": { "ja": "ナポリ", "en": "Neapolitan" },
+      "hydrationPct": 65,
+      "saltPct": 2.5,
+      "yeastType": "dry",
+      "yeastPct": 0.2,
+      "oilPct": 0,
+      "targetDdtC": 24,
+      "ddtSeasonal": { "summer": 24, "winter": 26 },
+      "fermentationType": "cold",
+      "fermentationHours": 24,
+      "ballWeightG": 250
+    },
+    "ny": {
+      "id": "ny",
+      "label": { "ja": "NY", "en": "New York" },
+      "hydrationPct": 60,
+      "saltPct": 2.0,
+      "yeastType": "dry",
+      "yeastPct": 0.3,
+      "oilPct": 2.0,
+      "targetDdtC": 22,
+      "ddtSeasonal": { "summer": 22, "winter": 24 },
+      "fermentationType": "cold",
+      "fermentationHours": 48,
+      "ballWeightG": 280
+    },
+    "roma": {
+      "id": "roma",
+      "label": { "ja": "ローマ", "en": "Roman" },
+      "hydrationPct": 70,
+      "saltPct": 2.5,
+      "yeastType": "dry",
+      "yeastPct": 0.1,
+      "oilPct": 2.0,
+      "targetDdtC": 23,
+      "ddtSeasonal": { "summer": 23, "winter": 25 },
+      "fermentationType": "cold",
+      "fermentationHours": 48,
+      "ballWeightG": 200
+    },
+    "custom": {
+      "id": "custom",
+      "label": { "ja": "カスタム", "en": "Custom" },
+      "hydrationPct": 65,
+      "saltPct": 2.5,
+      "yeastType": "dry",
+      "yeastPct": 0.2,
+      "oilPct": 0,
+      "targetDdtC": 24,
+      "ddtSeasonal": { "summer": 24, "winter": 26 },
+      "fermentationType": "cold",
+      "fermentationHours": 24,
+      "ballWeightG": 250
+    }
+  },
+  "preferments": {
+    "biga": {
+      "id": "biga",
+      "label": { "ja": "Biga（ビガ）", "en": "Biga", "it": "Biga" },
+      "summary": { "ja": "イタリア式硬質前発酵。STG等で参照される。", "en": "Italian stiff preferment, referenced in STG and traditional methods." },
+      "ratioPct": { "min": 20, "max": 40 },
+      "hydrationPct": 50,
+      "fermentHours": { "min": 12, "max": 24 },
+      "tempC": { "min": 16, "max": 20 },
+      "yeastAdjustmentPct": -30,
+      "mixerSuitability": { "hand": 75, "spiral": 85, "fork": 80, "double_arm": 70, "unknown": 85 },
+      "flourSuitability": { "caputo-saccorosso": 90, "caputo-cuoco": 80, "5stagioni-napoletana": 85 }
+    },
+    "poolish": {
+      "id": "poolish",
+      "label": { "ja": "Poolish（プーリッシュ）", "en": "Poolish", "it": "Poolish" },
+      "summary": { "ja": "液状前発酵。風味と伸展性の個性。", "en": "Liquid preferment for flavor and extensibility." },
+      "ratioPct": { "min": 20, "max": 35 },
+      "hydrationPct": 100,
+      "fermentHours": { "min": 12, "max": 18 },
+      "tempC": { "min": 18, "max": 22 },
+      "yeastAdjustmentPct": -25,
+      "mixerSuitability": { "hand": 70, "spiral": 70, "fork": 75, "double_arm": 80, "unknown": 70 },
+      "flourSuitability": { "caputo-nuvola": 85, "caputo-nuvola-super": 88, "petra-00": 78 }
+    },
+    "lievito_madre": {
+      "id": "lievito_madre",
+      "label": { "ja": "Lievito Madre（リエヴィト・マードレ）", "en": "Lievito Madre", "it": "Lievito Madre" },
+      "summary": { "ja": "サワー系自然発酵。長時間発酵との個性的な相性。", "en": "Sourdough culture with distinctive long ferment pairing." },
+      "ratioPct": { "min": 15, "max": 30 },
+      "hydrationPct": 60,
+      "fermentHours": { "min": 8, "max": 16 },
+      "tempC": { "min": 18, "max": 24 },
+      "yeastAdjustmentPct": -100,
+      "mixerSuitability": { "hand": 85, "spiral": 65, "fork": 80, "double_arm": 60, "unknown": 65 },
+      "flourSuitability": { "petra-00": 88, "caputo-saccorosso": 82, "japan-local": 70 }
+    },
+    "hybrid": {
+      "id": "hybrid",
+      "label": { "ja": "Hybrid（ハイブリッド）", "en": "Hybrid", "it": "Hybrid" },
+      "summary": { "ja": "複数前発酵の組み合わせ。実験・研究向け。", "en": "Combined preferments for research and experimentation." },
+      "ratioPct": { "min": 25, "max": 50 },
+      "hydrationPct": 70,
+      "fermentHours": { "min": 8, "max": 20 },
+      "tempC": { "min": 16, "max": 22 },
+      "yeastAdjustmentPct": -40,
+      "mixerSuitability": { "hand": 70, "spiral": 75, "fork": 72, "double_arm": 78, "unknown": 75 },
+      "flourSuitability": { "caputo-cuoco": 80, "5stagioni-napoletana": 78, "other": 70 }
+    }
+  },
+  "processes": {
+    "straight": {
+      "id": "straight",
+      "label": { "ja": "Straight（ストレート）", "en": "Straight dough", "it": "Impasto diretto" },
+      "durationMin": null,
+      "ddtAdjustmentC": 0,
+      "order": 1,
+      "notes": { "ja": "前発酵なしで直接練る基本工程。", "en": "Direct mix without preferment." }
+    },
+    "autolyse": {
+      "id": "autolyse",
+      "label": { "ja": "Autolyse（オートリーズ）", "en": "Autolyse", "it": "Autolisi" },
+      "durationMin": 30,
+      "ddtAdjustmentC": -0.5,
+      "order": 0,
+      "notes": { "ja": "粉と水を休ませ、伸展性を高める工程。STG等で参照。", "en": "Rest flour and water to improve extensibility." }
+    },
+    "bench": {
+      "id": "bench",
+      "label": { "ja": "Bench（ベンチタイム）", "en": "Bench rest", "it": "Pausa in bench" },
+      "durationMin": 15,
+      "ddtAdjustmentC": 0,
+      "order": 2,
+      "notes": { "ja": "分割前後の休ませ。グルテンリラックス。", "en": "Rest period before or after dividing." }
+    },
+    "punch": {
+      "id": "punch",
+      "label": { "ja": "Punch（パンチ）", "en": "Punch down", "it": "Sfonatura" },
+      "durationMin": 2,
+      "ddtAdjustmentC": 0.5,
+      "order": 3,
+      "notes": { "ja": "発酵中のdegas。気泡コントロール。", "en": "Degas during fermentation for bubble control." }
+    }
+  },
+  "presets": [
+    {
+      "id": "preset-napoli-straight-cold",
+      "label": { "ja": "ナポリ・ストレート・冷蔵24h", "en": "Neapolitan straight cold 24h" },
+      "regionalMethodId": "napoli",
+      "prefermentId": null,
+      "processIds": ["straight"],
+      "officialReferenceId": null,
+      "params": {},
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "preset-napoli-biga-cold",
+      "label": { "ja": "ナポリ・Biga・冷蔵24h", "en": "Neapolitan biga cold 24h" },
+      "regionalMethodId": "napoli",
+      "prefermentId": "biga",
+      "processIds": ["straight"],
+      "officialReferenceId": null,
+      "params": {},
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "preset-ny-poolish-cold",
+      "label": { "ja": "NY・Poolish・冷蔵48h", "en": "NY poolish cold 48h" },
+      "regionalMethodId": "ny",
+      "prefermentId": "poolish",
+      "processIds": ["straight"],
+      "officialReferenceId": null,
+      "params": {},
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "preset-vpn-reference",
+      "label": { "ja": "VPN参照（強制ではない）", "en": "VPN reference (not mandatory)" },
+      "regionalMethodId": "napoli",
+      "prefermentId": null,
+      "processIds": ["straight"],
+      "officialReferenceId": "vpn",
+      "params": {},
+      "knowledgeEntryId": "official-vpn-overview"
+    },
+    {
+      "id": "preset-stg-reference",
+      "label": { "ja": "STG参照（強制ではない）", "en": "STG reference (not mandatory)" },
+      "regionalMethodId": "napoli",
+      "prefermentId": "biga",
+      "processIds": ["autolyse", "straight"],
+      "officialReferenceId": "stg",
+      "params": {},
+      "knowledgeEntryId": "official-stg-overview"
+    },
+    {
+      "id": "preset-apn-reference",
+      "label": { "ja": "APN参照（強制ではない）", "en": "APN reference (not mandatory)" },
+      "regionalMethodId": "napoli",
+      "prefermentId": null,
+      "processIds": ["straight"],
+      "officialReferenceId": "apn",
+      "params": {},
+      "knowledgeEntryId": "official-apn-overview"
+    },
+    {
+      "id": "preset-lievito-madre-cold",
+      "label": { "ja": "Lievito Madre・冷蔵48h", "en": "Lievito madre cold 48h" },
+      "regionalMethodId": "napoli",
+      "prefermentId": "lievito_madre",
+      "processIds": ["straight"],
+      "officialReferenceId": null,
+      "params": { "yeastType": "sourdough", "yeastPct": 0 },
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "preset-hybrid-autolyse",
+      "label": { "ja": "Hybrid・Autolyse・研究用", "en": "Hybrid autolyse research" },
+      "regionalMethodId": "custom",
+      "prefermentId": "hybrid",
+      "processIds": ["autolyse", "straight", "bench"],
+      "officialReferenceId": null,
+      "params": {},
+      "knowledgeEntryId": null
+    }
+  ]
+}

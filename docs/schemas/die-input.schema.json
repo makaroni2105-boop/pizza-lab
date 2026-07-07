@@ -1,0 +1,922 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pizza-lab.dev/schemas/die-input.schema.json",
+  "title": "Pizza-Lab DIE Input/Output Schema",
+  "description": "Quick Mode / Lab Mode から Dough Intelligence Engine に渡す共通入出力スキーマ。UI入力 → プロファイル補完 → 解決済み入力 → 計算出力の流れを定義する。",
+  "version": "0.1.0",
+
+  "definitions": {
+
+    "MixerType": {
+      "type": "string",
+      "enum": ["hand", "spiral", "fork", "double_arm", "unknown"]
+    },
+
+    "MethodType": {
+      "type": "string",
+      "enum": ["napoli", "ny", "roma", "custom"]
+    },
+
+    "YeastType": {
+      "type": "string",
+      "enum": ["dry", "fresh", "sourdough"]
+    },
+
+    "FermentationType": {
+      "type": "string",
+      "enum": ["room", "cold", "mixed"]
+    },
+
+    "ModeType": {
+      "type": "string",
+      "enum": ["quick", "lab"]
+    },
+
+    "ConfidenceLevel": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+
+    "FieldSource": {
+      "type": "string",
+      "enum": ["user", "profile", "preset", "master", "learning", "computed", "weather"],
+      "description": "値の取得元。user=その場入力, profile=店舗プロファイル, preset=用途プロファイル, master=マスタJSON, learning=Learning Engine, computed=計算導出, weather=天気API"
+    },
+
+    "UnknownOrNumber": {
+      "description": "数値、null（未設定→補完）、または unknown（わからない→補完）。",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "null" },
+        { "type": "string", "const": "unknown" }
+      ]
+    },
+
+    "NullableNumber": {
+      "type": ["number", "null"]
+    },
+
+    "ResolvedValue": {
+      "type": "object",
+      "description": "解決済み値と取得元メタデータ。",
+      "required": ["value", "source"],
+      "properties": {
+        "value": {},
+        "source": { "$ref": "#/definitions/FieldSource" },
+        "sourceDetail": {
+          "type": "string",
+          "description": "例: 外気温+3°C, spiral.avg_friction, Run学習補正"
+        },
+        "wasEstimated": {
+          "type": "boolean",
+          "description": "user/preset 以外から補完されたか。"
+        }
+      }
+    },
+
+    "EnvironmentInput": {
+      "type": "object",
+      "description": "環境条件。外気温・外湿度はシステム自動取得。",
+      "properties": {
+        "ambientTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "外気温 (°C)。null/未設定時は天気API。"
+        },
+        "ambientHumidityPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "外湿度 (%)。null/未設定時は天気API。"
+        },
+        "shopRoomTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "店舗室温 (°C)。Quick: 任意入力。Lab: 推奨。"
+        },
+        "shopHumidityPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "店内湿度 (%)。Lab Mode で設定可。"
+        }
+      }
+    },
+
+    "FlourItemInput": {
+      "type": "object",
+      "description": "粉1種類の設定。",
+      "required": ["flourId"],
+      "properties": {
+        "flourId": {
+          "type": "string",
+          "description": "flour-master.json の粉 ID。"
+        },
+        "ratioPct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "ブレンド比率 (%)。単一粉は 100。"
+        },
+        "flourTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "粉温 (°C)。"
+        },
+        "proteinPercent": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "タンパク質 (%)。未設定時は flour-master。"
+        },
+        "wValue": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "W値。未設定時は flour-master。"
+        },
+        "absorptionFactor": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "吸水補正係数。未設定時は flour-master。"
+        }
+      }
+    },
+
+    "FlourBlendInput": {
+      "type": "object",
+      "description": "粉設定・粉ブレンド。Quick Mode ではプロファイル主力粉100%を使用。Lab Mode で上書き可。",
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "$ref": "#/definitions/FlourItemInput" },
+          "description": "粉リスト。ratioPct 合計は 100。"
+        },
+        "effectiveFlourTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "ブレンド加重平均粉温。未設定時は items から算出。"
+        },
+        "effectiveAbsorptionFactor": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "ブレンド加重平均吸水係数。加水率補正に使用。"
+        }
+      }
+    },
+
+    "MixerInput": {
+      "type": "object",
+      "description": "ミキサー設定。「わからない」許容。Quick Mode ではプロファイル値を使用。",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/MixerType",
+          "description": "ミキサー種別。unknown=わからない。"
+        },
+        "modelId": {
+          "type": ["string", "null"],
+          "description": "mixer-master.json の機種 ID。null=わからない。"
+        },
+        "lowSpeedMin": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "低速時間 (分)。"
+        },
+        "highSpeedMin": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "高速時間 (分)。"
+        },
+        "lowRpm": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "低速回転数 (rpm)。"
+        },
+        "highRpm": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "高速回転数 (rpm)。"
+        },
+        "manualFrictionOffsetC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "手動摩擦補正 (°C)。Lab Mode で調整。"
+        }
+      }
+    },
+
+    "MethodInput": {
+      "type": "object",
+      "description": "製法・配合比率（Baker's %）。",
+      "properties": {
+        "method": {
+          "$ref": "#/definitions/MethodType",
+          "description": "製法。"
+        },
+        "hydrationPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "加水率 (% Baker's)。"
+        },
+        "saltPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "塩 (% Baker's)。"
+        },
+        "oilPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "油 (% Baker's)。任意。"
+        }
+      }
+    },
+
+    "YeastInput": {
+      "type": "object",
+      "description": "イースト設定。",
+      "properties": {
+        "yeastType": {
+          "$ref": "#/definitions/YeastType",
+          "description": "イースト種類。"
+        },
+        "yeastPct": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "イースト量 (% Baker's)。"
+        }
+      }
+    },
+
+    "FermentationScheduleInput": {
+      "type": "object",
+      "description": "発酵スケジュール。Lab Mode で詳細上書き可。Quick Mode ではプロファイル/製法プリセット。",
+      "properties": {
+        "fermentationType": {
+          "$ref": "#/definitions/FermentationType",
+          "description": "発酵方針。room=常温, cold=冷蔵, mixed=混合。"
+        },
+        "fermentationHours": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "発酵時間 (時間)。"
+        },
+        "mixStartTime": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "練り開始予定時刻。null=即時計算。"
+        },
+        "useTime": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "使用予定時刻。発酵逆算に使用。"
+        },
+        "roomTempDuringFermentC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "発酵中の环境温度 (°C)。未設定時は shopRoomTempC。"
+        }
+      }
+    },
+
+    "BatchInput": {
+      "type": "object",
+      "description": "仕込み量。",
+      "required": ["pizzaCount"],
+      "properties": {
+        "pizzaCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "作る枚数。"
+        },
+        "ballWeightG": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "1枚あたり生地重量 (g)。"
+        },
+        "totalDoughWeightG": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "総生地重量 (g)。未設定時は pizzaCount × ballWeightG。"
+        }
+      }
+    },
+
+    "TemperatureInput": {
+      "type": "object",
+      "description": "温度関連。",
+      "properties": {
+        "flourTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "粉温 (°C)。flour.items から導出可。"
+        },
+        "waterTempC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "水温 (°C)。null=未指定→DIEが推奨水温を逆算。Lab で上書き可。"
+        },
+        "targetDdtC": {
+          "$ref": "#/definitions/UnknownOrNumber",
+          "description": "目標生地温 / DDT (°C)。"
+        }
+      }
+    },
+
+    "QuickModeRequest": {
+      "type": "object",
+      "description": "Quick Mode UI から API へ送る最小入力。2〜4項目。残りはプロファイル+補完で解決。",
+      "required": ["mode", "shopId", "presetId", "batch"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "quick"
+        },
+        "shopId": {
+          "type": "string",
+          "description": "店舗 ID。"
+        },
+        "presetId": {
+          "type": "string",
+          "description": "用途プロファイル ID（営業/大会/研究）。"
+        },
+        "batch": {
+          "type": "object",
+          "required": ["pizzaCount"],
+          "properties": {
+            "pizzaCount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "ballWeightG": {
+              "$ref": "#/definitions/UnknownOrNumber",
+              "description": "通常は preset から補完。上書き可。"
+            }
+          }
+        },
+        "environment": {
+          "type": "object",
+          "description": "Quick Mode で唯一の環境上書き。",
+          "properties": {
+            "shopRoomTempC": {
+              "$ref": "#/definitions/UnknownOrNumber",
+              "description": "今日の店舗室温。任意。"
+            }
+          }
+        },
+        "memo": {
+          "type": ["string", "null"],
+          "maxLength": 100,
+          "description": "メモ。v0.1 では計算不使用。"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "LabModeRequest": {
+      "type": "object",
+      "description": "Lab Mode UI から API へ送る詳細入力。全セクションを部分上書き可能。未指定セクションはプロファイル+補完。",
+      "required": ["mode", "shopId", "presetId", "batch"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "lab"
+        },
+        "shopId": {
+          "type": "string"
+        },
+        "presetId": {
+          "type": "string",
+          "description": "ベースとなる用途プロファイル。Lab 上書きの起点。"
+        },
+        "experimentName": {
+          "type": ["string", "null"],
+          "maxLength": 80,
+          "description": "実験名。Lab 記録用。"
+        },
+        "dnaId": {
+          "type": ["string", "null"],
+          "description": "紐づく Dough DNA ID（v0.2）。"
+        },
+        "batch": {
+          "$ref": "#/definitions/BatchInput"
+        },
+        "temperature": {
+          "$ref": "#/definitions/TemperatureInput",
+          "description": "粉温、水温（任意上書き）、目標生地温。"
+        },
+        "environment": {
+          "$ref": "#/definitions/EnvironmentInput"
+        },
+        "flour": {
+          "$ref": "#/definitions/FlourBlendInput",
+          "description": "粉設定・粉ブレンド。"
+        },
+        "mixer": {
+          "$ref": "#/definitions/MixerInput"
+        },
+        "method": {
+          "$ref": "#/definitions/MethodInput"
+        },
+        "yeast": {
+          "$ref": "#/definitions/YeastInput"
+        },
+        "fermentation": {
+          "$ref": "#/definitions/FermentationScheduleInput"
+        },
+        "memo": {
+          "type": ["string", "null"],
+          "maxLength": 500
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "DieRequest": {
+      "description": "Quick / Lab いずれかのリクエスト。",
+      "oneOf": [
+        { "$ref": "#/definitions/QuickModeRequest" },
+        { "$ref": "#/definitions/LabModeRequest" }
+      ]
+    },
+
+    "ProfileComplementedFields": {
+      "type": "object",
+      "description": "Quick Mode で UI 入力がなく、店舗プロファイル・用途プリセットから補完される項目一覧。",
+      "properties": {
+        "fromShopProfile": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "flour.primaryFlourId",
+            "flour.defaultFlourTempC",
+            "flour.proteinPercent",
+            "flour.wValue",
+            "flour.absorptionFactor",
+            "mixer.type",
+            "mixer.modelId",
+            "mixer.lowSpeedMin",
+            "mixer.highSpeedMin",
+            "mixer.lowRpm",
+            "mixer.highRpm",
+            "mixer.manualFrictionOffsetC",
+            "method.method",
+            "method.hydrationPct",
+            "method.saltPct",
+            "method.oilPct",
+            "yeast.yeastType",
+            "yeast.yeastPct",
+            "temperature.targetDdtC",
+            "ddt.summerDdtC",
+            "ddt.winterDdtC"
+          ]
+        },
+        "fromPresetProfile": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "batch.ballWeightG",
+            "method.method",
+            "method.hydrationPct",
+            "method.saltPct",
+            "yeast.yeastType",
+            "yeast.yeastPct",
+            "temperature.targetDdtC",
+            "fermentation.fermentationType",
+            "fermentation.fermentationHours"
+          ]
+        },
+        "fromSystem": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "environment.ambientTempC",
+            "environment.ambientHumidityPct"
+          ]
+        },
+        "fromFallbackMaster": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "プロファイル未設定時に master JSON から補完。",
+          "default": [
+            "mixer.type",
+            "mixer.modelId",
+            "mixer.lowSpeedMin",
+            "mixer.highSpeedMin",
+            "mixer.lowRpm",
+            "mixer.highRpm",
+            "temperature.flourTempC",
+            "environment.shopRoomTempC",
+            "environment.shopHumidityPct",
+            "flour.absorptionFactor"
+          ]
+        },
+        "fromLearning": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "mixer.effectiveFrictionC"
+          ]
+        },
+        "computedByDie": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "temperature.waterTempC",
+            "temperature.recommendedWaterTempC",
+            "batch.totalDoughWeightG",
+            "flour.effectiveFlourTempC",
+            "flour.effectiveAbsorptionFactor"
+          ]
+        }
+      }
+    },
+
+    "DieResolvedInput": {
+      "type": "object",
+      "description": "プロファイル補完・フォールバック適用後、DIE エンジンに渡す解決済み入力。Quick/Lab 共通形式。",
+      "required": ["mode", "shopId", "presetId", "batch", "temperature", "environment", "flour", "mixer", "method", "yeast", "fermentation"],
+      "properties": {
+        "mode": { "$ref": "#/definitions/ModeType" },
+        "shopId": { "type": "string" },
+        "presetId": { "type": "string" },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "batch": {
+          "type": "object",
+          "required": ["pizzaCount", "ballWeightG", "totalDoughWeightG"],
+          "properties": {
+            "pizzaCount": { "type": "integer" },
+            "ballWeightG": { "type": "number" },
+            "totalDoughWeightG": { "type": "number" }
+          }
+        },
+        "temperature": {
+          "type": "object",
+          "required": ["flourTempC", "targetDdtC"],
+          "properties": {
+            "flourTempC": { "type": "number" },
+            "waterTempC": {
+              "type": ["number", "null"],
+              "description": "ユーザー指定水温。null の場合は DIE 逆算。"
+            },
+            "targetDdtC": { "type": "number" }
+          }
+        },
+        "environment": {
+          "type": "object",
+          "required": ["ambientTempC", "ambientHumidityPct", "shopRoomTempC", "shopHumidityPct"],
+          "properties": {
+            "ambientTempC": { "type": "number" },
+            "ambientHumidityPct": { "type": "number" },
+            "shopRoomTempC": { "type": "number" },
+            "shopHumidityPct": { "type": "number" }
+          }
+        },
+        "flour": {
+          "type": "object",
+          "required": ["items", "effectiveFlourTempC", "effectiveAbsorptionFactor"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["flourId", "ratioPct", "flourTempC"],
+                "properties": {
+                  "flourId": { "type": "string" },
+                  "ratioPct": { "type": "number" },
+                  "flourTempC": { "type": "number" },
+                  "proteinPercent": { "type": "number" },
+                  "wValue": { "type": "number" },
+                  "absorptionFactor": { "type": "number" }
+                }
+              }
+            },
+            "effectiveFlourTempC": { "type": "number" },
+            "effectiveAbsorptionFactor": { "type": "number" }
+          }
+        },
+        "mixer": {
+          "type": "object",
+          "required": ["type", "lowSpeedMin", "highSpeedMin", "effectiveFrictionC"],
+          "properties": {
+            "type": { "$ref": "#/definitions/MixerType" },
+            "modelId": { "type": ["string", "null"] },
+            "lowSpeedMin": { "type": "number" },
+            "highSpeedMin": { "type": "number" },
+            "lowRpm": { "type": "number" },
+            "highRpm": { "type": "number" },
+            "baseFrictionC": { "type": "number", "description": "マスタ+種別平均。" },
+            "manualFrictionOffsetC": { "type": "number" },
+            "learnedFrictionOffsetC": { "type": "number", "description": "Learning Engine 補正。" },
+            "effectiveFrictionC": { "type": "number", "description": "最終摩擦 = base + manual + learned。" }
+          }
+        },
+        "method": {
+          "type": "object",
+          "required": ["method", "hydrationPct", "saltPct"],
+          "properties": {
+            "method": { "$ref": "#/definitions/MethodType" },
+            "hydrationPct": { "type": "number" },
+            "saltPct": { "type": "number" },
+            "oilPct": { "type": "number", "default": 0 },
+            "adjustedHydrationPct": {
+              "type": "number",
+              "description": "粉吸水係数補正後の有效加水率。"
+            }
+          }
+        },
+        "yeast": {
+          "type": "object",
+          "required": ["yeastType", "yeastPct"],
+          "properties": {
+            "yeastType": { "$ref": "#/definitions/YeastType" },
+            "yeastPct": { "type": "number" }
+          }
+        },
+        "fermentation": {
+          "type": "object",
+          "required": ["fermentationType", "fermentationHours"],
+          "properties": {
+            "fermentationType": { "$ref": "#/definitions/FermentationType" },
+            "fermentationHours": { "type": "number" },
+            "mixStartTime": { "type": ["string", "null"], "format": "date-time" },
+            "useTime": { "type": ["string", "null"], "format": "date-time" },
+            "roomTempDuringFermentC": { "type": "number" }
+          }
+        },
+        "fieldResolution": {
+          "type": "object",
+          "description": "各フィールドの解決元。UI 透明性・信頼度算出用。",
+          "additionalProperties": { "$ref": "#/definitions/ResolvedValue" }
+        },
+        "estimatedFieldCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "user/preset 以外から補完された項目数。"
+        },
+        "learningRunCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "該当ミキサーの Learning Run 数。"
+        }
+      }
+    },
+
+    "RecipeOutput": {
+      "type": "object",
+      "description": "配合計算結果（Baker's %）。",
+      "required": ["flourG", "waterG", "saltG", "yeastG", "totalDoughWeightG"],
+      "properties": {
+        "flourG": { "type": "number" },
+        "waterG": { "type": "number" },
+        "saltG": { "type": "number" },
+        "yeastG": { "type": "number" },
+        "oilG": { "type": "number", "default": 0 },
+        "totalDoughWeightG": { "type": "number" },
+        "hydrationPct": { "type": "number" },
+        "saltPct": { "type": "number" },
+        "yeastPct": { "type": "number" }
+      }
+    },
+
+    "TemperatureOutput": {
+      "type": "object",
+      "description": "温度・DDT 逆算結果。",
+      "required": [
+        "recommendedWaterTempC",
+        "useIce",
+        "predictedDoughTempC",
+        "targetDdtC",
+        "ddtDeltaC",
+        "frictionRiseC"
+      ],
+      "properties": {
+        "recommendedWaterTempC": {
+          "type": "number",
+          "description": "推奨水温 (°C)。"
+        },
+        "useIce": {
+          "type": "boolean",
+          "description": "氷使用の有無。recommendedWaterTempC < 4 で true。"
+        },
+        "iceAmountG": {
+          "type": "number",
+          "description": "氷の必要量 (g)。useIce=false 時は 0。"
+        },
+        "effectiveWaterTempC": {
+          "type": "number",
+          "description": "氷使用時の実効水温 (°C)。"
+        },
+        "predictedDoughTempC": {
+          "type": "number",
+          "description": "予想生地温 (°C)。"
+        },
+        "targetDdtC": {
+          "type": "number",
+          "description": "目標生地温 (°C)。"
+        },
+        "ddtDeltaC": {
+          "type": "number",
+          "description": "予想 − 目標 (°C)。正=高め、負=低め。"
+        },
+        "frictionRiseC": {
+          "type": "number",
+          "description": "ミキサーによる摩擦温度上昇 (°C)。"
+        },
+        "frictionSource": {
+          "type": "string",
+          "enum": ["master", "learning", "manual"],
+          "description": "摩擦係数の主な取得元。"
+        }
+      }
+    },
+
+    "YeastAdjustmentOutput": {
+      "type": "object",
+      "description": "イースト補正。",
+      "required": ["adjustmentPct", "adjustedYeastPct", "reason"],
+      "properties": {
+        "adjustmentPct": {
+          "type": "number",
+          "description": "補正量 (%)。± 表示。"
+        },
+        "adjustedYeastPct": {
+          "type": "number",
+          "description": "補正後イースト量 (% Baker's)。"
+        },
+        "reason": {
+          "type": "string",
+          "description": "例: 予想生地温が目標より+1.5°Cのため発酵加速"
+        }
+      }
+    },
+
+    "FermentationScheduleOutput": {
+      "type": "object",
+      "description": "発酵スケジュール補正結果。",
+      "required": ["fermentationType", "baseHours", "adjustedHours", "mixStartTime", "useTime"],
+      "properties": {
+        "fermentationType": { "$ref": "#/definitions/FermentationType" },
+        "baseHours": {
+          "type": "number",
+          "description": "プロファイル/製法の基準発酵時間 (h)。"
+        },
+        "adjustedHours": {
+          "type": "number",
+          "description": "補正後発酵時間 (h)。"
+        },
+        "adjustmentMinutes": {
+          "type": "number",
+          "description": "補正量 (分)。± 表示。"
+        },
+        "mixStartTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "推奨練り開始時刻。"
+        },
+        "useTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "使用予定時刻。"
+        },
+        "adjustmentReason": {
+          "type": "string",
+          "description": "補正理由。"
+        }
+      }
+    },
+
+    "DieOutput": {
+      "type": "object",
+      "description": "Dough Intelligence Engine の計算出力。Quick/Lab 共通。",
+      "required": ["recipe", "temperature", "yeastAdjustment", "fermentationSchedule", "confidence"],
+      "properties": {
+        "recipe": { "$ref": "#/definitions/RecipeOutput" },
+        "temperature": { "$ref": "#/definitions/TemperatureOutput" },
+        "yeastAdjustment": { "$ref": "#/definitions/YeastAdjustmentOutput" },
+        "fermentationSchedule": { "$ref": "#/definitions/FermentationScheduleOutput" },
+        "confidence": {
+          "type": "object",
+          "required": ["level", "estimatedFieldCount", "learningRunCount"],
+          "properties": {
+            "level": { "$ref": "#/definitions/ConfidenceLevel" },
+            "estimatedFieldCount": { "type": "integer" },
+            "learningRunCount": { "type": "integer" },
+            "isLearningComplete": {
+              "type": "boolean",
+              "description": "Run 5以上で true。"
+            }
+          }
+        },
+        "resolvedInput": {
+          "$ref": "#/definitions/DieResolvedInput",
+          "description": "計算に使用した解決済み入力（監査・Run記録用）。"
+        },
+        "calculatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/definitions/QuickModeRequest" },
+    { "$ref": "#/definitions/LabModeRequest" },
+    { "$ref": "#/definitions/DieResolvedInput" },
+    { "$ref": "#/definitions/DieOutput" }
+  ],
+
+  "examples": [
+    {
+      "description": "Quick Mode リクエスト例（最小入力）",
+      "value": {
+        "mode": "quick",
+        "shopId": "shop-001",
+        "presetId": "preset-business",
+        "batch": {
+          "pizzaCount": 40
+        },
+        "environment": {
+          "shopRoomTempC": null
+        },
+        "memo": null
+      }
+    },
+    {
+      "description": "Lab Mode リクエスト例（部分上書き）",
+      "value": {
+        "mode": "lab",
+        "shopId": "shop-001",
+        "presetId": "preset-research",
+        "experimentName": "Caputo + 5 Stagioni ブレンドテスト",
+        "batch": {
+          "pizzaCount": 6,
+          "ballWeightG": 250
+        },
+        "temperature": {
+          "flourTempC": 18,
+          "waterTempC": null,
+          "targetDdtC": 23
+        },
+        "environment": {
+          "shopRoomTempC": 22,
+          "shopHumidityPct": 55
+        },
+        "flour": {
+          "items": [
+            { "flourId": "caputo-pizzeria", "ratioPct": 70, "flourTempC": 18 },
+            { "flourId": "5stagioni-napoletana", "ratioPct": 30, "flourTempC": 18 }
+          ]
+        },
+        "mixer": {
+          "type": "spiral",
+          "modelId": "spiral-fork-40",
+          "lowSpeedMin": 3,
+          "highSpeedMin": 9,
+          "lowRpm": 80,
+          "highRpm": 160
+        },
+        "method": {
+          "method": "napoli",
+          "hydrationPct": 64,
+          "saltPct": 2.8
+        },
+        "yeast": {
+          "yeastType": "dry",
+          "yeastPct": 0.15
+        },
+        "fermentation": {
+          "fermentationType": "cold",
+          "fermentationHours": 48,
+          "useTime": "2026-07-08T18:00:00+09:00"
+        }
+      }
+    },
+    {
+      "description": "DIE 出力例",
+      "value": {
+        "recipe": {
+          "flourG": 6200,
+          "waterG": 4030,
+          "saltG": 155,
+          "yeastG": 12,
+          "oilG": 0,
+          "totalDoughWeightG": 10000,
+          "hydrationPct": 65,
+          "saltPct": 2.5,
+          "yeastPct": 0.2
+        },
+        "temperature": {
+          "recommendedWaterTempC": 8,
+          "useIce": true,
+          "iceAmountG": 820,
+          "effectiveWaterTempC": 3,
+          "predictedDoughTempC": 24.0,
+          "targetDdtC": 24,
+          "ddtDeltaC": 0.0,
+          "frictionRiseC": 14,
+          "frictionSource": "learning"
+        },
+        "yeastAdjustment": {
+          "adjustmentPct": 0,
+          "adjustedYeastPct": 0.2,
+          "reason": "予想生地温は目標と一致"
+        },
+        "fermentationSchedule": {
+          "fermentationType": "cold",
+          "baseHours": 24,
+          "adjustedHours": 24,
+          "adjustmentMinutes": 0,
+          "mixStartTime": "2026-07-06T18:00:00+09:00",
+          "useTime": "2026-07-07T18:00:00+09:00",
+          "adjustmentReason": "補正不要"
+        },
+        "confidence": {
+          "level": "medium",
+          "estimatedFieldCount": 2,
+          "learningRunCount": 12,
+          "isLearningComplete": true
+        },
+        "calculatedAt": "2026-07-06T10:00:00+09:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+---
+description: Dough DNA。理想生地の数値化・店舗100点・DIE/Flour/Mixer/Learning連携。
+alwaysApply: true
+---
+
+# Dough DNA
+
+Pizza-Lab は **レシピを作るシステムではない**。  
+職人が目指す **理想の生地を実現** する。Dough DNA は **その店だけの100点**。
+
+仕様: `PIZZALAB_MASTER.md` §6 / `docs/schemas/dna.schema.json`（今後） / `types/dna.ts`
+
+## 最重要思想
+
+- 同じ加水率でも、目指す生地は **職人・店舗ごとに異なる**
+- DNA は **優劣ではなく個性** — コルニチョーネ低くても、その店の100点なら100点
+- **世界共通の評価基準を設けない**
+- 数値目標の逆算は **DIE**。DNA スコアの更新は **Learning + 職人評価**
+
+## DNA が保持する項目（各 0〜100）
+
+```
+lightness          軽さ
+chewiness          もち感
+bite               歯切れ
+extensibility      伸展性
+elasticity         弾力
+aroma              香り
+crustColor         焼色
+bakeTolerance      焼成耐性
+cornicioneForm     コルニチョーネ形成
+airiness           気泡
+centerTexture      中心部の食感
+crustTexture       クラストの食感
+mouthfeel          口溶け
+digestibility      消化の軽さ
+crispness          サク感
+moistness          しっとり感
+reheatTolerance    焼き戻り耐性
+```
+
+`DoughDNA { shopId, presetType?, scores: Record<DNAKey, 0-100>, updatedAt }`
+
+## 評価 — 店舗ごとの100点
+
+| 原則 | 内容 |
+|------|------|
+| 基準 | **その店** が定義。グローバルランキングなし |
+| 学習 | Run 実測 + 職人評価 → DNA プロファイル更新 |
+| 表示 | 他店 DNA との比較 UI 禁止（将来もオプトインのみ） |
+
+## モード・プリセット（将来拡張）
+
+| プリセット | 用途 |
+|------------|------|
+| `business` | 営業用 DNA — Quick 内部参照（v0.1 非表示） |
+| `competition` | 大会用 DNA |
+| `research` | 研究用 DNA — Lab で明示編集 |
+
+同一店舗が用途別に複数 DNA を保持可。`presetId` / `dnaId` で紐づけ。
+
+## DIE 連携
+
+DNA → **目標パラメータ** → DIE が逆算:
+
+```
+Dough DNA（食感ターゲット）
+  → 導出: 加水率, DDT, 発酵種別/時間, 製法, イースト量
+    → lib/die/（配合・水温・氷・摩擦・発酵を数値計算）
+```
+
+Quick: 用途プロファイル内 DNA を **暗黙参照**（UI 非表示）  
+Lab: DNA 明示編集 → DIE 入力の起点
+
+## Flour Intelligence 連携
+
+```
+目標 DNA（食感スコア）
+  ↓ Flour Personality マッピング
+    ↓ lib/blend/（粉比率提案）
+      ↓ DIE（有效吸水率 → 配合）
+```
+
+## Mixer Intelligence 連携
+
+```
+目標 DNA（伸展性・弾力・気泡等）
+  ↓ Mixer 適性・Personality マッピング
+    ↓ 推奨練り方（種別・時間・回転）
+      ↓ lib/die/friction.ts
+```
+
+## Learning 連携
+
+```
+実測結果（生地温・Run）
+  + 職人評価（DNA スコア入力）
+  + 写真（将来: 解析 → DNA 候補更新）
+    → 店舗 DNA プロファイル更新
+      → 次回 DIE / ブレンド / ミキサー提案へ反映
+```
+
+- **shopId 必須**。他店 DNA・Run を参照しない
+- DNA 更新は職人確認を優先（自動上書きのみ v0.2+ 検討）
+
+## AI 境界
+
+| 許可 | 禁止 |
+|------|------|
+| DNA 項目の説明・改善方向の提案 | DNA スコア（0-100）の LLM 生成 |
+| 「伸展性を上げるには〜」Knowledge 連携 | 配合・DDT・ブレンド比率の算出 |
+| 2つの DNA プロファイルの言語比較 | 他店 DNA との優劣判定 |
+
+**DNA スコアは Learning + 職人入力 + DIE 導出値で管理。**
+
+## Quick / Lab
+
+| モード | DNA |
+|--------|-----|
+| Quick | プロファイル DNA を内部使用。UI に DNA なし |
+| Lab | `/lab/dna` で編集・実験名紐づけ |
+
+## 将来拡張
+
+- 写真解析 → 焼色・コルニチョーネ・気泡スコア候補
+- 焼成解析 → 焼成耐性・クラスト評価
+- 営業/大会/研究 DNA の独立管理と切替
+
+## 禁止
+
+```
+❌ グローバル DNA ランキング・「正しい DNA」提示
+❌ AI による DNA スコア自動確定（職人確認なし）
+❌ DNA なしで Lab ブレンドを universal 正解化
+❌ Quick Mode に DNA 編集 UI
+❌ レシピ出力を DNA の代わりにする（DNA = 目的、レシピ = 手段）
+```
+
+## 関連
+
+`lib/dna/` / `app/lab/dna/` / Flour Intelligence / Mixer Intelligence / Dough Intelligence / `content/knowledge/dna/`

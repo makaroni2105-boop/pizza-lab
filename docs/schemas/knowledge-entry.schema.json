@@ -1,0 +1,364 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pizza-lab.dev/schemas/knowledge-entry.schema.json",
+  "title": "Pizza-Lab Knowledge Entry Schema",
+  "description": "公式知識・科学知識・Intelligence・職人知識・用語を共通管理するスキーマ。Markdown Frontmatter および DB レコード両対応。",
+  "version": "0.1.0",
+
+  "definitions": {
+
+    "KnowledgeTier": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4, 5],
+      "description": "1=official, 2=science, 3=intelligence, 4=glossary, 5=craftsman"
+    },
+
+    "KnowledgeCategory": {
+      "type": "string",
+      "enum": [
+        "official/stg",
+        "official/vpn",
+        "official/apn",
+        "science/gluten",
+        "science/fermentation",
+        "science/yeast",
+        "science/starch",
+        "science/enzyme",
+        "science/temperature",
+        "science/water",
+        "intelligence/dough-intelligence",
+        "intelligence/flour-intelligence",
+        "intelligence/mixer-intelligence",
+        "intelligence/method-intelligence",
+        "intelligence/dough-dna",
+        "intelligence/learning-engine",
+        "glossary/term",
+        "glossary/article",
+        "craftsman/run",
+        "craftsman/note",
+        "craftsman/photo",
+        "craftsman/self-eval",
+        "craftsman/shop-100"
+      ]
+    },
+
+    "SummaryType": {
+      "type": "string",
+      "enum": ["summary", "practice", "parameter", "glossary", "comparison"],
+      "description": "summary=要約, practice=実践知, parameter=パラメータ表, glossary=用語, comparison=製法比較"
+    },
+
+    "LanguageCode": {
+      "type": "string",
+      "enum": ["ja", "en", "it"]
+    },
+
+    "SourceReference": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "出典名。例: VPN Disciplinare" },
+        "url": { "type": ["string", "null"], "format": "uri" },
+        "isbn": { "type": ["string", "null"] },
+        "revisionDate": { "type": ["string", "null"], "format": "date" },
+        "accessedAt": { "type": ["string", "null"], "format": "date" },
+        "note": { "type": "string", "description": "転載禁止等の注意" }
+      }
+    },
+
+    "IntelligenceTag": {
+      "type": "string",
+      "enum": [
+        "dough-intelligence",
+        "flour-intelligence",
+        "mixer-intelligence",
+        "method-intelligence",
+        "dough-dna",
+        "learning-engine"
+      ]
+    },
+
+    "LocalizedString": {
+      "type": "object",
+      "properties": {
+        "ja": { "type": "string" },
+        "en": { "type": "string" },
+        "it": { "type": "string" }
+      },
+      "minProperties": 1
+    },
+
+    "KnowledgeEntryMeta": {
+      "type": "object",
+      "description": "Markdown Frontmatter または DB メタデータ。",
+      "required": ["id", "tier", "category", "title", "languages", "summaryType", "aiUsable"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{2,80}$",
+          "description": "一意 ID。例: official-vpn-ddt-summary"
+        },
+        "tier": { "$ref": "#/definitions/KnowledgeTier" },
+        "category": { "$ref": "#/definitions/KnowledgeCategory" },
+        "title": { "$ref": "#/definitions/LocalizedString" },
+        "languages": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/LanguageCode" },
+          "minItems": 1
+        },
+        "summaryType": { "$ref": "#/definitions/SummaryType" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SourceReference" },
+          "description": "Tier 1 official では最低1件必須。"
+        },
+        "relatedIntelligence": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/IntelligenceTag" }
+        },
+        "relatedMasterIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "flour-master / mixer-master / method-presets の ID 参照。"
+        },
+        "aiUsable": {
+          "type": "boolean",
+          "description": "RAG コンテキストに含めてよいか。"
+        },
+        "aiTierLabel": {
+          "type": "string",
+          "enum": ["official", "science", "intelligence", "glossary", "craftsman"],
+          "description": "Ask AI 回答時の出典ラベル。"
+        },
+        "shopId": {
+          "type": ["string", "null"],
+          "description": "Tier 5 craftsman では必須。それ以外は null。"
+        },
+        "authorType": {
+          "type": "string",
+          "enum": ["pizzalab", "official-summary", "craftsman", "community"],
+          "default": "pizzalab"
+        },
+        "officialMethodId": {
+          "type": ["string", "null"],
+          "enum": ["stg", "vpn", "apn", null],
+          "description": "official/ カテゴリ用。"
+        },
+        "isOfficialVerbatim": {
+          "type": "boolean",
+          "const": false,
+          "description": "規約全文転載フラグ。常に false（転載禁止）。"
+        },
+        "version": { "type": "string", "default": "1.0.0" },
+        "publishedAt": { "type": "string", "format": "date" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "tier": { "const": 5 } },
+            "required": ["tier"]
+          },
+          "then": {
+            "required": ["shopId"],
+            "properties": { "shopId": { "type": "string", "minLength": 1 } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "tier": { "const": 1 } },
+            "required": ["tier"]
+          },
+          "then": {
+            "required": ["sources", "officialMethodId"],
+            "properties": {
+              "sources": { "minItems": 1 },
+              "isOfficialVerbatim": { "const": false }
+            }
+          }
+        }
+      ]
+    },
+
+    "KnowledgeEntryBody": {
+      "type": "object",
+      "description": "本文構造（Markdown パース後または JSON 保存）。",
+      "properties": {
+        "summary": { "$ref": "#/definitions/LocalizedString" },
+        "practiceNotes": { "$ref": "#/definitions/LocalizedString" },
+        "bodyMarkdown": {
+          "type": "string",
+          "maxLength": 10000,
+          "description": "メイン本文（Markdown）。"
+        },
+        "parameterTable": {
+          "type": "array",
+          "description": "参照用パラメータ。DIE 計算根拠には使わない。",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "value": { "type": "string" },
+              "unit": { "type": "string" },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "comparisonNotes": {
+          "type": "array",
+          "description": "STG/VPN/APN 等の比較（優劣なし）。",
+          "items": {
+            "type": "object",
+            "properties": {
+              "methodId": { "type": "string" },
+              "note": { "$ref": "#/definitions/LocalizedString" }
+            }
+          }
+        }
+      }
+    },
+
+    "GlossaryEntry": {
+      "type": "object",
+      "description": "glossary/ 専用拡張。",
+      "required": ["term", "definition"],
+      "properties": {
+        "term": { "$ref": "#/definitions/LocalizedString" },
+        "definition": { "$ref": "#/definitions/LocalizedString" },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "relatedTerms": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "CraftsmanRunEntry": {
+      "type": "object",
+      "description": "craftsman/run — DoughRun 知識化。shopId 必須。",
+      "required": ["shopId", "runId"],
+      "properties": {
+        "shopId": { "type": "string" },
+        "runId": { "type": "string" },
+        "dnaSnapshotId": { "type": ["string", "null"] },
+        "craftsmanNote": { "type": "string", "maxLength": 500 },
+        "selfEvalScores": {
+          "type": "object",
+          "description": "DNA 項目への職人自己評価（0-100）。",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "photoIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "KnowledgeEntry": {
+      "type": "object",
+      "required": ["meta"],
+      "properties": {
+        "meta": { "$ref": "#/definitions/KnowledgeEntryMeta" },
+        "body": { "$ref": "#/definitions/KnowledgeEntryBody" },
+        "glossary": { "$ref": "#/definitions/GlossaryEntry" },
+        "craftsmanRun": { "$ref": "#/definitions/CraftsmanRunEntry" }
+      }
+    },
+
+    "KnowledgeSearchResult": {
+      "type": "object",
+      "description": "lib/knowledge/search 返却型。",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KnowledgeEntry" }
+        },
+        "tierFilter": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KnowledgeTier" }
+        },
+        "shopId": { "type": ["string", "null"] }
+      }
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/definitions/KnowledgeEntry" },
+    { "$ref": "#/definitions/KnowledgeEntryMeta" },
+    { "$ref": "#/definitions/GlossaryEntry" },
+    { "$ref": "#/definitions/CraftsmanRunEntry" }
+  ],
+
+  "examples": [
+    {
+      "description": "公式 VPN 要約記事例",
+      "value": {
+        "meta": {
+          "id": "official-vpn-ddt-summary",
+          "tier": 1,
+          "category": "official/vpn",
+          "title": { "ja": "VPN における生地温度", "en": "Dough temperature in VPN" },
+          "languages": ["ja", "en"],
+          "summaryType": "practice",
+          "tags": ["ddt", "vpn", "napoli"],
+          "sources": [
+            {
+              "name": "Disciplinare VPN",
+              "url": "https://www.pizzavpn.it/",
+              "accessedAt": "2026-01-01",
+              "note": "要約のみ。全文転載なし。"
+            }
+          ],
+          "relatedIntelligence": ["dough-intelligence", "method-intelligence"],
+          "aiUsable": true,
+          "aiTierLabel": "official",
+          "shopId": null,
+          "officialMethodId": "vpn",
+          "isOfficialVerbatim": false,
+          "authorType": "official-summary"
+        },
+        "body": {
+          "summary": {
+            "ja": "VPN 規約では生地温度管理が重要視される。Pizza-Lab では DIE で逆算する。"
+          },
+          "practiceNotes": {
+            "ja": "規約数値は参照表として記載。店舗の100点は DNA で別管理。"
+          }
+        }
+      }
+    },
+    {
+      "description": "店舗職人メモ例",
+      "value": {
+        "meta": {
+          "id": "craftsman-note-001",
+          "tier": 5,
+          "category": "craftsman/note",
+          "title": { "ja": "7月の湿度対策" },
+          "languages": ["ja"],
+          "summaryType": "practice",
+          "tags": ["humidity", "summer"],
+          "aiUsable": true,
+          "aiTierLabel": "craftsman",
+          "shopId": "shop-001",
+          "authorType": "craftsman"
+        },
+        "body": {
+          "bodyMarkdown": "今年の7月は店内湿度が高い。DDT を0.5°C下げると安定。"
+        }
+      }
+    }
+  ]
+}

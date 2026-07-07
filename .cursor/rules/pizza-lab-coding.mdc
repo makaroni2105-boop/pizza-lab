@@ -1,0 +1,83 @@
+---
+description: Pizza-Lab コーディング規約。型・DIE分離・責務・AI境界・master管理。
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Pizza-Lab Coding
+
+仕様: `PIZZALAB_MASTER.md` / スキーマ: `docs/schemas/`
+
+## 基本方針
+
+- **可読性最優先** — 短い関数、ネスト3段以内
+- **関数名で意図を表す** — `calcRecommendedWaterTemp()` OK / 長いコメントで補完 NG
+- **TypeScript 厳密** — `any` 禁止。型は `types/` と schema を正とする
+- **純粋関数優先** — 副作用は API 境界・DB 層に閉じる
+
+```typescript
+// ❌ BAD
+function calc(d: any) { /* 50 lines */ }
+
+// ✅ GOOD
+function resolveDieInput(quick: QuickModeRequest, profile: ShopProfile): DieResolvedInput
+function recommendWaterTemp(resolved: DieResolvedInput): TemperatureOutput
+```
+
+## DIE — 唯一の計算エンジン
+
+| 層 | 責務 |
+|----|------|
+| `lib/die/` | 水温・氷・摩擦・配合・発酵の**すべて** |
+| `lib/defaults/` | 「わからない」補完・プロファイルマージ |
+| `lib/learning/` | 摩擦補正の学習・Run 記録 |
+| `app/*`, `components/*` | **表示のみ**。計算ロジック禁止 |
+| `lib/ai/` | 説明・提案・Knowledge 検索のみ |
+
+```typescript
+// ❌ コンポーネント内で Baker's % 計算
+// ❌ LLM に水温を算出させる
+// ✅ lib/die/recommend.ts → app/api/die/recommend/route.ts → UI
+```
+
+## Quick Mode — 責務分離
+
+```
+UI (app/quick/)     → 表示・入力収集
+lib/defaults/       → 入力補完
+lib/die/            → 計算
+lib/learning/       → 実測記録・摩擦更新
+```
+
+混ぜない。Quick 用ヘルパーは `lib/quick/`（縮約のみ、計算なし）。
+
+## Learning — 店舗資産
+
+- すべての Run / 補正値に **`shopId` 必須**
+- クエリ・更新は shop でスコープ。他店舗データを読まない・書かない
+- グローバル master 更新は Learning から直接しない
+
+## AI 境界
+
+| 許可 | 禁止 |
+|------|------|
+| Ask 説明、Knowledge 要約 | 水温・配合・摩擦・発酵の数値算出 |
+| 粉ブレンド提案（v0.2+） | Learning 摩擦の LLM 推定 |
+| DIE 結果をコンテキスト入力 | Quick 必須項目の LLM 生成 |
+
+## Master JSON
+
+許可: `data/mixer-master.json`, `data/flour-master.json`, `data/method-presets.json`  
+**新 master 追加は ADR + MASTER 更新なしに禁止。**
+
+## 型・ファイル
+
+- 入出力型は `docs/schemas/*.schema.json` と同期
+- 新ドメイン型 → `types/` に追加。インライン型の乱立禁止
+- テスト: `lib/die/*.test.ts`, `lib/defaults/*.test.ts` を優先
+
+## 保守
+
+- 重複は共通化。3回目で extract
+- リファクタリングをためらわない（テストがあれば実行）
+- v0.2 機能（DNA, blend）を Quick / DIE コアに先行混入しない

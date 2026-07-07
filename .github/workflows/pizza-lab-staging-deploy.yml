@@ -1,0 +1,52 @@
+# Pizza-Lab — staging deploy only (manual)
+# Worker: pizza-lab-staging (--env staging)
+# NALIPO / production (pizza-lab) には deploy しない
+
+name: Pizza-Lab Staging Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: pizza-lab-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  staging-deploy:
+    name: Deploy pizza-lab-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build OpenNext for Cloudflare
+        run: npm run build:cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy staging
+        run: npm run deploy:staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

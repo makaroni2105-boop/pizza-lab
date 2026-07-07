@@ -1,0 +1,200 @@
+.history {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+}
+
+.header {
+  margin-bottom: 1.25rem;
+}
+
+.header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.nav a {
+  color: #c45c26;
+  text-decoration: none;
+}
+
+.summary {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+}
+
+.summary h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.summaryGrid dt {
+  color: #666;
+}
+
+.summaryGrid dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.statusBadge {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.statusLearning {
+  color: #8b5a00;
+  background: #fff8eb;
+}
+
+.statusActive {
+  color: #1a5c2e;
+  background: #edf7ef;
+}
+
+.statusHigh {
+  color: #1a4a5c;
+  background: #edf5f7;
+}
+
+.empty {
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  color: #666;
+  text-align: center;
+  background: #fafafa;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.cardDate {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.shopLabel {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.grid dt {
+  color: #666;
+}
+
+.grid dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.memo {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: #555;
+  line-height: 1.4;
+  border-top: 1px solid #f0f0f0;
+}
+
+.deleteButton {
+  min-height: 36px;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #8b1e1e;
+  background: #fff;
+  border: 1px solid #e8b4b4;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.note {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: #777;
+  line-height: 1.5;
+}
+
+.shopGroup {
+  margin-bottom: 1.5rem;
+}
+
+.shopGroupTitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #444;
+}

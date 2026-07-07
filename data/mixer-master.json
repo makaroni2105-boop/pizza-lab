@@ -1,0 +1,203 @@
+{
+  "version": "0.1.0",
+  "updatedAt": "2026-07-06T00:00:00Z",
+  "learningTargetFields": [
+    "avgFrictionC",
+    "lowSpeedMin",
+    "highSpeedMin"
+  ],
+  "types": {
+    "hand": {
+      "label": { "ja": "手ごね", "en": "Hand kneading" },
+      "characteristics": {
+        "ja": "摩擦が最小。時間と技法でグルテン形成をコントロール。",
+        "en": "Minimal friction. Gluten development controlled by time and technique."
+      },
+      "glutenDevelopment": "medium",
+      "oxidationTendency": "low",
+      "avgFrictionC": 2,
+      "frictionPerMinC": 0.3,
+      "doughTempRiseTendency": "low",
+      "lowSpeedMin": null,
+      "highSpeedMin": null,
+      "lowRpm": null,
+      "highRpm": null,
+      "recommendedHydrationPct": { "min": 58, "max": 70 },
+      "bigaSuitability": 75,
+      "poolishSuitability": 70,
+      "straightSuitability": 85,
+      "autolyseCompatibility": 90,
+      "highHydrationCompatibility": 75,
+      "napoliCompatibility": 80
+    },
+    "spiral": {
+      "label": { "ja": "スパイラル", "en": "Spiral mixer" },
+      "characteristics": {
+        "ja": "ナポリで最も一般的。バランスの取れたグルテン形成と摩擦。",
+        "en": "Most common for Neapolitan pizza. Balanced gluten development and friction."
+      },
+      "glutenDevelopment": "high",
+      "oxidationTendency": "medium",
+      "avgFrictionC": 14,
+      "frictionPerMinC": null,
+      "doughTempRiseTendency": "medium",
+      "lowSpeedMin": 3,
+      "highSpeedMin": 8,
+      "lowRpm": 80,
+      "highRpm": 160,
+      "recommendedHydrationPct": { "min": 60, "max": 70 },
+      "bigaSuitability": 85,
+      "poolishSuitability": 70,
+      "straightSuitability": 90,
+      "autolyseCompatibility": 75,
+      "highHydrationCompatibility": 80,
+      "napoliCompatibility": 95
+    },
+    "fork": {
+      "label": { "ja": "フォーク", "en": "Fork mixer" },
+      "characteristics": {
+        "ja": "低摩擦・短時間。デリケートな生地向け。",
+        "en": "Low friction, short mixing. Suited for delicate doughs."
+      },
+      "glutenDevelopment": "medium",
+      "oxidationTendency": "low",
+      "avgFrictionC": 10,
+      "frictionPerMinC": null,
+      "doughTempRiseTendency": "low",
+      "lowSpeedMin": 2,
+      "highSpeedMin": 6,
+      "lowRpm": 60,
+      "highRpm": 120,
+      "recommendedHydrationPct": { "min": 58, "max": 68 },
+      "bigaSuitability": 80,
+      "poolishSuitability": 75,
+      "straightSuitability": 85,
+      "autolyseCompatibility": 80,
+      "highHydrationCompatibility": 70,
+      "napoliCompatibility": 85
+    },
+    "double_arm": {
+      "label": { "ja": "ダブルアーム", "en": "Double arm mixer" },
+      "characteristics": {
+        "ja": "高加水・大量仕込み向け。摩擦やや高め。",
+        "en": "For high hydration and large batches. Moderately high friction."
+      },
+      "glutenDevelopment": "high",
+      "oxidationTendency": "medium",
+      "avgFrictionC": 16,
+      "frictionPerMinC": null,
+      "doughTempRiseTendency": "high",
+      "lowSpeedMin": 4,
+      "highSpeedMin": 10,
+      "lowRpm": 70,
+      "highRpm": 140,
+      "recommendedHydrationPct": { "min": 62, "max": 75 },
+      "bigaSuitability": 70,
+      "poolishSuitability": 80,
+      "straightSuitability": 75,
+      "autolyseCompatibility": 70,
+      "highHydrationCompatibility": 90,
+      "napoliCompatibility": 75
+    },
+    "unknown": {
+      "label": { "ja": "わからない", "en": "Unknown" },
+      "characteristics": {
+        "ja": "種別不明時はスパイラル平均で補完。Learningで改善。",
+        "en": "Falls back to spiral averages when type is unknown. Improves with Learning."
+      },
+      "glutenDevelopment": "medium",
+      "oxidationTendency": "medium",
+      "avgFrictionC": 14,
+      "frictionPerMinC": null,
+      "doughTempRiseTendency": "medium",
+      "lowSpeedMin": 3,
+      "highSpeedMin": 8,
+      "lowRpm": 80,
+      "highRpm": 160,
+      "recommendedHydrationPct": { "min": 60, "max": 70 },
+      "bigaSuitability": 85,
+      "poolishSuitability": 70,
+      "straightSuitability": 90,
+      "autolyseCompatibility": 75,
+      "highHydrationCompatibility": 80,
+      "napoliCompatibility": 95
+    }
+  },
+  "models": [
+    {
+      "id": "hand-manual",
+      "maker": "",
+      "model": "手ごね",
+      "type": "hand",
+      "frictionC": 2,
+      "lowSpeedMin": null,
+      "highSpeedMin": null,
+      "lowRpm": null,
+      "highRpm": null,
+      "capacityKg": null,
+      "notes": { "ja": "標準的手ごね。摩擦は時間ベースで補正。" },
+      "confidence": "high",
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "spiral-fork-40",
+      "maker": "Fork",
+      "model": "HS40",
+      "type": "spiral",
+      "frictionC": 12,
+      "lowSpeedMin": 3,
+      "highSpeedMin": 8,
+      "lowRpm": 80,
+      "highRpm": 160,
+      "capacityKg": 40,
+      "notes": { "ja": "小型スパイラル。摩擦やや低め。" },
+      "confidence": "medium",
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "spiral-spiral-55",
+      "maker": "Spiral",
+      "model": "SP 55",
+      "type": "spiral",
+      "frictionC": 14,
+      "lowSpeedMin": 3,
+      "highSpeedMin": 8,
+      "lowRpm": 80,
+      "highRpm": 160,
+      "capacityKg": 55,
+      "notes": { "ja": "中型スパイラル。種別平均に近い。" },
+      "confidence": "medium",
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "fork-sancassiano",
+      "maker": "Sancassiano",
+      "model": "",
+      "type": "fork",
+      "frictionC": 10,
+      "lowSpeedMin": 2,
+      "highSpeedMin": 6,
+      "lowRpm": 60,
+      "highRpm": 120,
+      "capacityKg": 30,
+      "notes": { "ja": "フォークミキサー代表例。" },
+      "confidence": "low",
+      "knowledgeEntryId": null
+    },
+    {
+      "id": "doublearm-diosna",
+      "maker": "Diosna",
+      "model": "SPI",
+      "type": "double_arm",
+      "frictionC": 16,
+      "lowSpeedMin": 4,
+      "highSpeedMin": 10,
+      "lowRpm": 70,
+      "highRpm": 140,
+      "capacityKg": 80,
+      "notes": { "ja": "ダブルアーム。大量・高加水向け。" },
+      "confidence": "medium",
+      "knowledgeEntryId": null
+    }
+  ]
+}
