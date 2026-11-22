@@ -8,7 +8,7 @@
     "build:cloudflare": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "preview:staging": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare preview -c wrangler.staging.toml",
-    "validate:staging-config": "wrangler deploy --dry-run -c wrangler.staging.toml",
+    "validate:staging-config": "node scripts/validate-staging-wrangler.mjs",
     "deploy:staging": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare deploy -c wrangler.staging.toml",
     "start": "next start",
     "lint": "next lint",

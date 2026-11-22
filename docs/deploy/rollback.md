@@ -63,6 +63,20 @@ npx wrangler d1 execute pizza_lab_db --remote --file=backup/pizza_lab_db_YYYYMMD
 
 **⚠️ 本番 deploy 前はロールバック手順を staging で 1 回 rehearsal する。**
 
+### 4.1 `pizza-lab-staging` 緊急停止（NALIPO 営業・/daily）
+
+認証不具合や誤公開の疑い。**Access Application の Disable / Worker Access 解除のみを「外部遮断」とみなさない。** 先に **公開経路** を止める。
+
+| 優先 | 操作 |
+|------|------|
+| 1 | `pizza-lab-staging` → Settings → Domains & Routes → **workers.dev Disable** |
+| 2 | `preview_urls = false` を維持した再 deploy、または Dashboard で Preview 無効 |
+| 3 | Access で **Deny（Block）** を有効化（認証層の補助） |
+| 4 | Deployments **Rollback** |
+| 5 | 最終: **`pizza-lab-staging` のみ削除**（NALIPO 他 Worker・本番 `pizza-lab` 禁止） |
+
+詳細: [staging-nalipo-daily-go-live.md](./staging-nalipo-daily-go-live.md) §5.
+
 ---
 
 ## 5. D1 migration ロールバック

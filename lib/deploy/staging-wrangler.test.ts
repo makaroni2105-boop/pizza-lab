@@ -8,6 +8,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import packageJson from "../../package.json";
+
 const STAGING_WRANGLER = join(process.cwd(), "wrangler.staging.toml");
 const ROOT_WRANGLER = join(process.cwd(), "wrangler.toml");
 
@@ -23,6 +25,8 @@ describe("wrangler.staging.toml (NALIPO daily staging)", () => {
     expect(raw).not.toMatch(/\[\[d1_databases\]\]/);
     expect(raw).not.toMatch(/database_id/);
     expect(raw).not.toMatch(/nalipo-db/);
+    expect(raw).toMatch(/workers_dev\s*=\s*true/);
+    expect(raw).toMatch(/preview_urls\s*=\s*false/);
   });
 
   it("keeps root wrangler.toml D1 separate from staging file", () => {
@@ -41,5 +45,21 @@ describe("deploy:staging script", () => {
     const deploy = pkg.scripts["deploy:staging"] ?? "";
     expect(deploy).toContain("wrangler.staging.toml");
     expect(deploy).not.toMatch(/--env\s+staging/);
+  });
+
+  it("validate:staging-config enforces preview_urls and dry-run", () => {
+    const validate = packageJson.scripts["validate:staging-config"] ?? "";
+    expect(validate).toContain("validate-staging-wrangler.mjs");
+  });
+});
+
+describe("wrangler version (preview_urls)", () => {
+  it("uses wrangler 4.107+ for preview_urls support", () => {
+    const version = packageJson.devDependencies?.wrangler ?? "0";
+    const match = /^(\^|~)?(\d+)\.(\d+)\./.exec(version);
+    expect(match, `unexpected wrangler version: ${version}`).not.toBeNull();
+    const major = Number(match![2]);
+    const minor = Number(match![3]);
+    expect(major > 4 || (major === 4 && minor >= 107)).toBe(true);
   });
 });

@@ -4,6 +4,11 @@
 # NALIPO 予約システムの D1 / Worker とは無関係
 
 name = "pizza-lab-staging"
+# workers.dev 本番 URL を有効（Access Self-hosted 対象: pizza-lab-staging.nalipo.workers.dev）
+# preview_urls = false — Preview URL / Version URL を無効（Wrangler → Cloudflare API）
+# 補助: deploy 直後に Worker Access「All traffic」で本番 workers.dev を保護
+workers_dev = true
+preview_urls = false
 main = ".open-next/worker.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
