@@ -21,10 +21,6 @@ database_name = "pizza_lab_db"
 database_id = "06fd466a-3878-4e89-b3d7-2d680bfba17f"
 migrations_dir = "migrations"
 
-# staging Worker（Phase 6e — deploy:staging 用。まだ deploy 未実行）
-[env.staging]
-name = "pizza-lab-staging"
-
-[[env.staging.services]]
-binding = "WORKER_SELF_REFERENCE"
-service = "pizza-lab-staging"
+# staging（営業用 /daily）— D1 なし。deploy は wrangler.staging.toml のみ（--env staging は使わない）
+# 理由: トップレベル [[d1_databases]] が [env.staging] に継承されるため
+# 参照: docs/deploy/staging-nalipo-daily-go-live.md

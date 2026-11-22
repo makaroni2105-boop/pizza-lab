@@ -1,0 +1,17 @@
+# Pizza-Lab staging — NALIPO「毎日の仕込み」(/daily) 営業用
+# D1 バインディング無し（本番 pizza_lab_db に接続しない）
+# デプロイ: npm run deploy:staging（wrangler.toml / pizza-lab 本番 Worker とは別ファイル）
+# NALIPO 予約システムの D1 / Worker とは無関係
+
+name = "pizza-lab-staging"
+main = ".open-next/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "pizza-lab-staging"

@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cloudflare": "opennextjs-cloudflare build",
+    "build:cloudflare": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env staging",
+    "preview:staging": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare preview -c wrangler.staging.toml",
+    "validate:staging-config": "wrangler deploy --dry-run -c wrangler.staging.toml",
+    "deploy:staging": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare deploy -c wrangler.staging.toml",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
