@@ -10,7 +10,7 @@ export default function Home() {
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
-      <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.5rem" }}>Pizza-Lab</h1>
+      <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.5rem" }}>Pizza Lab</h1>
       <p style={{ margin: "0 0 1rem", color: "#555", fontSize: "0.875rem" }}>
         ピッツァ職人向けツール
       </p>
