@@ -48,3 +48,7 @@ next-env.d.ts
 
 # Local backups / D1 exports
 backups/
+
+# ローカル用アイコン素材（配信は public/ のみ）
+/pizza-lab-icons/
+pizza-lab-icons.zip
