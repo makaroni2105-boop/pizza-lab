@@ -35,19 +35,30 @@ function formatGrams(value: number): string {
 function IngredientRow({
   name,
   grams,
-  emphasize,
+  variant,
 }: {
   name: string;
   grams: number;
-  emphasize?: boolean;
+  variant?: "mixerWater" | "finishWater";
 }) {
+  const rowClass =
+    variant === "mixerWater"
+      ? `${styles.ingredientRow} ${styles.ingredientRowMixerWater}`
+      : variant === "finishWater"
+        ? `${styles.ingredientRow} ${styles.ingredientRowFinishWater}`
+        : styles.ingredientRow;
+
+  const amountClass =
+    variant === "finishWater"
+      ? `${styles.ingredientAmount} ${styles.ingredientAmountFinish}`
+      : variant === "mixerWater"
+        ? `${styles.ingredientAmount} ${styles.ingredientAmountMixer}`
+        : styles.ingredientAmount;
+
   return (
-    <li className={styles.ingredientRow}>
+    <li className={rowClass}>
       <span className={styles.ingredientName}>{name}</span>
-      <span
-        className={styles.ingredientAmount}
-        style={emphasize ? { fontSize: "1.5rem" } : undefined}
-      >
+      <span className={amountClass}>
         {formatGrams(grams)}
         <span className={styles.ingredientUnit}> g</span>
       </span>
@@ -58,13 +69,13 @@ function IngredientRow({
 const CONFIRM_STATUS_LABEL: Record<DailyPrepConfirmUiState, string> = {
   idle: "",
   saved:
-    "使用頻度を1回記録しました（この端末のみ）。同じ粉量で別の仕込みをした場合は、もう一度押してください。",
+    "使用履歴に1回記録しました（この端末のみ）。同じ粉量の別仕込みは、もう一度押してください。",
   storage_unavailable:
-    "保存できませんでした。上の分量はそのまま使えます（使用頻度は記録されていません）。",
+    "履歴を保存できませんでした。上の分量はそのまま使えます。",
   write_failed:
-    "保存に失敗しました。上の分量はそのまま使えます（使用頻度は記録されていません）。",
+    "履歴の保存に失敗しました。上の分量はそのまま使えます。",
   duplicate_operation:
-    "同じ確定処理が重複しました。使用頻度は1回だけカウントされています。",
+    "同じ操作が重複しました。履歴は1回だけ加算されます。",
 };
 
 export function DailyView() {
@@ -303,21 +314,20 @@ export function DailyView() {
             <ul className={styles.ingredientList}>
               <IngredientRow name="小麦粉" grams={result.dayOf.flourG} />
               <IngredientRow
-                name="最初にミキサーへ入れる水（氷水）"
+                name="ミキサーへ最初に入れる水（氷水）"
                 grams={result.dayOf.firstWaterG}
-                emphasize
+                variant="mixerWater"
               />
               <IngredientRow
-                name="仕上げ用に別容器へ取る水"
+                name="仕上げ用の水（別容器に取る）"
                 grams={result.dayOf.finishWaterG}
-                emphasize
+                variant="finishWater"
               />
               <IngredientRow name="イースト" grams={result.dayOf.yeastG} />
               <IngredientRow name="塩" grams={result.dayOf.saltG} />
             </ul>
             <p className={styles.waterWarn} role="note">
-              仕上げ用の水（{formatGrams(result.dayOf.finishWaterG)} g）は最初にミキサーへ
-              全量入れないでください。別容器に取り、指定のタイミングで加えます。
+              仕上げ用の水は別容器に取り、ミキサーへ先に全量入れないでください。
             </p>
             {result.finishWaterRule.provisional ? (
               <p className={styles.provisionalTag}>
@@ -328,17 +338,17 @@ export function DailyView() {
         </>
       )}
 
-      <p className={styles.gramsHint}>材料の数値はグラム（g）表示です</p>
-
       <nav className={styles.navFooter} aria-label="サイト内ナビ">
         <Link href="/">ホーム</Link>
         <Link href="/quick">Quick</Link>
         <Link href="/calculator">Calculator</Link>
       </nav>
 
+      <div className={styles.bottomScrollPad} aria-hidden="true" />
+
       <div className={styles.confirmBar}>
         <p className={styles.confirmHint}>
-          「仕込む」は分量の確定ではなく、この端末の使用頻度に加算する操作です
+          表示しているだけでは記録されません。押したときだけ使用履歴に加算します
         </p>
         <button
           type="button"
@@ -347,7 +357,7 @@ export function DailyView() {
           aria-disabled={confirmDisabled}
           onClick={handleConfirm}
         >
-          この粉量で仕込む（使用頻度を記録）
+          この粉量を使用履歴に記録
         </button>
         {confirmUi !== "idle" ? (
           <p

@@ -143,6 +143,7 @@ describe("daily-prep UI integration (logic)", () => {
     expect(css).toMatch(/max-width:\s*480px/);
     expect(css).toMatch(/min-height:\s*48px/);
     expect(css).not.toMatch(/overflow-x:\s*auto/);
-    expect(css).toMatch(/padding-bottom:\s*7\.5rem|scroll-padding-bottom/);
+    expect(css).toMatch(/bottomScrollPad|scroll-padding-bottom/);
+    expect(css).toMatch(/safe-area-inset-bottom/);
   });
 });
