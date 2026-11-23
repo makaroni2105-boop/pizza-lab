@@ -408,3 +408,278 @@
   font-weight: 600;
   color: #666;
 }
+
+.recordSection {
+  margin: 1.25rem 0 1.5rem;
+  padding: 1rem 0.85rem;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+}
+
+.recordLead {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #444;
+}
+
+.recordSnapshot {
+  margin: 0 0 0.85rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.recordSnapshot div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.recordSnapshot dt {
+  font-weight: 600;
+  color: #333;
+}
+
+.recordSnapshot dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.recordFormGrid {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.recordField,
+.recordFieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.recordFieldWide {
+  grid-column: 1 / -1;
+}
+
+.recordField input,
+.recordField select,
+.recordFieldWide textarea {
+  min-height: 44px;
+  padding: 0.45rem 0.55rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.saveRecordButton {
+  min-height: 48px;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+  background: #9d0208;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.saveRecordButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.recordStatusOk {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1b4332;
+  text-align: center;
+}
+
+.recordStatusError {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #7f1d1d;
+  text-align: center;
+}
+
+.recordStatusPending {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+}
+
+.recordIdHint {
+  font-weight: 500;
+  color: #666;
+}
+
+.recordNavHint {
+  margin: 0.65rem 0 0;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.actualUsageDetails {
+  margin-bottom: 0.75rem;
+  border: 1px dashed #ccc;
+  border-radius: 10px;
+  padding: 0.35rem 0.55rem;
+  background: #fff;
+}
+
+.actualUsageSummary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.actualUsageBody {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.35rem 0 0.15rem;
+}
+
+.actualUsageHint {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.recordsSubhead {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+}
+
+.recordsInfo {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.chartGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .chartGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.chartBlock {
+  padding: 0.65rem 0.5rem 0.35rem;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+}
+
+.chartTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.chartList {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chartItem {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.chartBar {
+  width: 100%;
+  max-width: 28px;
+  background: linear-gradient(180deg, #c1121f, #9d0208);
+  border-radius: 4px 4px 2px 2px;
+}
+
+.chartValue {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.chartLabel {
+  font-size: 0.5625rem;
+  color: #666;
+}
+
+.recordListSection {
+  margin-top: 0.5rem;
+}
+
+.recordList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.recordListButton,
+.recordListButtonActive {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+}
+
+.recordListButtonActive {
+  border-color: #9d0208;
+  background: #fff5f5;
+}
+
+.recordListDate {
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+
+.recordDetail {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.recordDetailMeta {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  color: #444;
+}

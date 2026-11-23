@@ -13,6 +13,8 @@ export const PIZZA_LAB_TABLES = {
   learningRuns: "pizza_lab_learning_runs",
   weatherCache: "pizza_lab_weather_cache",
   syncQueue: "pizza_lab_sync_queue",
+  dailyPrepRecords: "pizza_lab_daily_prep_records",
+  dailyPrepRecordRevisions: "pizza_lab_daily_prep_record_revisions",
 } as const;
 
 export type PizzaLabTableName =
@@ -116,6 +118,39 @@ export type SyncQueueEntityType =
 export type SyncQueueOperation = "upsert" | "delete";
 
 export type SyncQueueStatus = "pending" | "processing" | "done" | "failed";
+
+/** pizza_lab_daily_prep_records 行 */
+export interface PizzaLabDailyPrepRecordRow {
+  id: string;
+  prep_date_jst: string;
+  shop_id: string | null;
+  total_flour_kg: number;
+  baseline_formula_json: string;
+  session_adjustment_json: string | null;
+  computed_formula_json: string;
+  computed_materials_json: string;
+  actual_materials_json: string;
+  room_temp_c: number | null;
+  memo: string | null;
+  dough_state_11am: string | null;
+  process_readings_json: string | null;
+  idempotency_key: string | null;
+  weather_snapshot_json: string;
+  ai_search_json: string;
+  current_revision: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** pizza_lab_daily_prep_record_revisions 行 */
+export interface PizzaLabDailyPrepRecordRevisionRow {
+  id: string;
+  record_id: string;
+  revision_number: number;
+  created_at: string;
+  change_kind: string;
+  record_snapshot_json: string;
+}
 
 /** pizza_lab_sync_queue 行 */
 export interface PizzaLabSyncQueueRow {

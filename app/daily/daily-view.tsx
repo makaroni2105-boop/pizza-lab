@@ -26,6 +26,7 @@ import {
   type DailyPrepSessionAdjustment,
 } from "@/types/daily-prep";
 
+import { DailyRecordSavePanel } from "./daily-record-save-panel";
 import styles from "./daily.module.css";
 
 function formatGrams(value: number): string {
@@ -335,6 +336,12 @@ export function DailyView() {
               </p>
             ) : null}
           </section>
+
+          <DailyRecordSavePanel
+            selectedKg={selectedKg}
+            adjustment={adjustment}
+            result={result}
+          />
         </>
       )}
 
