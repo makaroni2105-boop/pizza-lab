@@ -63,13 +63,39 @@ npm run validate:production-config
 
 ## 5. デプロイ実行（承認後・通常ターミナル）
 
-**1 回だけ**、以下のいずれか（OpenNext ビルド済みなら deploy のみ可）:
+### Build と deploy でフラグが違う（`@opennextjs/cloudflare` 1.20.1）
+
+| コマンド | `--dangerouslyUseUnsupportedNextVersion` |
+|----------|----------------------------------------|
+| **`build`** | **必要**（Next 15 メジャーが OpenNext の「公式 2 年」判定でサポート外のため） |
+| **`deploy`** | **不可**（CLI にこのオプションは無く、付けると `Unknown argument` で失敗） |
+
+`deploy` は **既に生成された `.open-next/`**（`worker.js` / assets）を `wrangler deploy` に渡す。**Next.js の `next build` は再実行しない**（`retrieveCompiledConfig` + `populateCache` + wrangler のみ）。
+
+**1 回だけ**、次の 2 段階（§3 でビルド済みなら **deploy 行のみ**可）:
 
 ```powershell
 Set-Location C:\Projects\pizza-lab
 npm run build:cloudflare
-npx opennextjs-cloudflare deploy --dangerouslyUseUnsupportedNextVersion
+npx opennextjs-cloudflare deploy --config wrangler.toml
 ```
+
+同等（npm script・推奨）:
+
+```powershell
+npm run build:cloudflare
+npm run deploy:production:phase0
+```
+
+`--config wrangler.toml` で **本番 Worker `pizza-lab` に確実に紐付け**（`wrangler.staging.toml` 誤用防止）。CWD が `C:\Projects\pizza-lab` であれば省略可だが、初回は明示を推奨。
+
+### Windows / Node の `Assertion failed`
+
+OpenNext は Windows 非推奨（ビルド時に WARN）。ネイティブ依存（`@ast-grep/napi`、workerd バンドル等）で **`Assertion failed`** が出ることがある。
+
+- **ビルドが完了し `.open-next/worker.js` がある** → deploy は **WSL 必須ではない**（通常 PowerShell で `deploy` のみ再試行可）
+- **ビルド段階で落ちる / 再現する** → **WSL または Linux CI** で `build:cloudflare` を実行する方が安定
+- deploy 自体は主に wrangler CLI（上記フラグ誤り以外の失敗はログをチケットに）
 
 **禁止コマンド例:**
 

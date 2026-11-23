@@ -26,7 +26,7 @@
 | 操作 | コマンド / ファイル | D1 | Worker 名 |
 |------|---------------------|-----|-----------|
 | Staging のみ | `npm run deploy:staging` | **なし** | `pizza-lab-staging` |
-| 本番（承認後） | `opennextjs-cloudflare deploy` + **`-c wrangler.toml`**（専用 script 追加推奨） | `pizza_lab_db` | `pizza-lab` |
+| 本番 Phase 0（承認後） | `npm run build:cloudflare` の後 **`npm run deploy:production:phase0`**（`opennextjs-cloudflare deploy --config wrangler.toml`。`--dangerouslyUseUnsupportedNextVersion` は **build のみ**） | `pizza_lab_db` | `pizza-lab` |
 
 **禁止:** `wrangler deploy` を `wrangler.toml` で流さずに staging 用トoml も誤用しない。`--env staging` は D1 継承のため **使用しない**（`staging-nalipo-daily-go-live.md` 参照）。
 
@@ -54,7 +54,7 @@
 **前提:** Self-hosted Application（本番 hostname + `/*`）と Worker **Access → All traffic** が有効、`CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` が **`pizza-lab` のみ**に設定済み。
 
 1. `wrangler.toml` の `workers_dev = false` を **`workers_dev = true`** に変更（別コミット・承認後）
-2. `npm run build:cloudflare` → 本番 deploy（`wrangler.toml` のみ — staging deploy 禁止）
+2. `npm run build:cloudflare` → **`npm run deploy:production:phase0`**（`wrangler.toml` のみ — staging deploy 禁止）
 3. 未ログインで hostname へアクセス → **Cloudflare Access ログイン**のみ（200 でアプリ全文が出た場合は workers.dev を即 Disable して調査）
 4. `npm run validate:production-config` は **`workers_dev=false` 必須のため、公開 go-live 後は本検証を「非公開フェーズ専用」として運用**（`workers_dev=true` にしたコミットではこのスクリプトは意図的に失敗する）
 

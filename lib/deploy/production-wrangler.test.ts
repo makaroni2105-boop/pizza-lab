@@ -52,3 +52,12 @@ describe("validate:production-config script", () => {
     expect(validate).toContain("validate-production-wrangler.mjs");
   });
 });
+
+describe("deploy:production:phase0 script", () => {
+  it("deploys via wrangler.toml without unsupported-next flag on deploy", () => {
+    const deploy = packageJson.scripts["deploy:production:phase0"] ?? "";
+    expect(deploy).toMatch(/wrangler\.toml/);
+    expect(deploy).not.toMatch(/wrangler\.staging\.toml/);
+    expect(deploy).not.toMatch(/dangerouslyUseUnsupportedNextVersion/);
+  });
+});
