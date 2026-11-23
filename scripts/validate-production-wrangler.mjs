@@ -1,7 +1,7 @@
 /**
  * 本番 Wrangler 事前検証（deploy しない）。
- * - wrangler.toml: Worker 名、D1 pizza_lab_db、preview_urls、NALIPO 分離
- * - 任意: wrangler deploy --dry-run（.open-next ビルド後）
+ * - wrangler.toml: Worker 名、D1 pizza_lab_db、workers_dev=false、preview_urls、NALIPO 分離
+ * - 必須: wrangler deploy --dry-run（.open-next ビルド後 — 省略時は失敗）
  *
  * NALIPO 予約・テイクアウトの Routes / カスタムドメインは
  * 本リポジトリの wrangler から変更しない（ダッシュボード操作も deploy 手順で禁止）。
@@ -25,6 +25,16 @@ const raw = readFileSync(PROD_TOML, "utf8");
 
 if (!/name\s*=\s*"pizza-lab"/.test(raw)) {
   fail('name must be "pizza-lab" (not pizza-lab-staging)');
+}
+if (!/workers_dev\s*=\s*false/.test(raw)) {
+  fail(
+    "workers_dev = false is required until Cloudflare Access protection is complete (workers_dev = true fails this check)",
+  );
+}
+if (/workers_dev\s*=\s*true/.test(raw)) {
+  fail(
+    "workers_dev = true must not be set before Access go-live; keep workers_dev = false",
+  );
 }
 if (!/preview_urls\s*=\s*false/.test(raw)) {
   fail("preview_urls = false is required for production Worker");
@@ -54,9 +64,8 @@ if (!/service\s*=\s*"pizza-lab"/.test(raw)) {
   fail('WORKER_SELF_REFERENCE service must be "pizza-lab"');
 }
 
-const routesBlock = /\[\[routes\]\]/i.test(raw);
-if (routesBlock && /nalipo/i.test(raw)) {
-  fail("wrangler.toml must not define [[routes]] for NALIPO domains");
+if (/\[\[routes\]\]/i.test(raw)) {
+  fail("wrangler.toml must not define [[routes]] (no custom domains or zone routes)");
 }
 
 const openNextMain = join(ROOT, ".open-next", "worker.js");
@@ -84,11 +93,11 @@ if (existsSync(openNextMain)) {
     fail("dry-run must not reference NALIPO D1");
   }
 } else {
-  console.log(
-    "validate:production-config — skip dry-run (.open-next/worker.js missing; run build:cloudflare first)",
+  fail(
+    "wrangler deploy --dry-run required — run npm run build:cloudflare first (.open-next/worker.js missing)",
   );
 }
 
 console.log(
-  "validate:production-config OK — pizza-lab, pizza_lab_db, preview_urls=false, NALIPO D1 isolated",
+  "validate:production-config OK — pizza-lab, pizza_lab_db, workers_dev=false, preview_urls=false, NALIPO D1 isolated",
 );

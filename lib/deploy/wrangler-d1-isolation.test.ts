@@ -12,6 +12,7 @@ describe("wrangler D1 isolation (Pizza Lab vs NALIPO)", () => {
   it("production wrangler binds pizza_lab_db only", () => {
     const raw = readFileSync(resolve(ROOT, "wrangler.toml"), "utf8");
     expect(raw).toMatch(/name\s*=\s*"pizza-lab"/);
+    expect(raw).toMatch(/workers_dev\s*=\s*false/);
     expect(raw).toMatch(/preview_urls\s*=\s*false/);
     expect(raw).toMatch(/database_name\s*=\s*"pizza_lab_db"/);
     expect(raw).toMatch(new RegExp(`database_id\\s*=\\s*"${PIZZA_LAB_D1_ID}"`));

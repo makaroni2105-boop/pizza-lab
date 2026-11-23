@@ -30,18 +30,35 @@
 
 **禁止:** `wrangler deploy` を `wrangler.toml` で流さずに staging 用トoml も誤用しない。`--env staging` は D1 継承のため **使用しない**（`staging-nalipo-daily-go-live.md` 参照）。
 
-## 4. 本番 `pizza-lab` — 公開経路保護
+## 4. 本番 `pizza-lab` — 公開経路保護（Access 完了まで非公開）
 
 | 項目 | staging（現状） | 本番 `wrangler.toml` |
 |------|-----------------|----------------------|
-| `workers_dev` | `true` | デプロイ方針に合わせて設定（今回変更なし） |
-| `preview_urls` | **`false`** | **`false`**（設定済み） |
+| `workers_dev` | `true`（Access 済み hostname） | **`false`**（Access 完了まで — `npm run validate:production-config` が **`workers_dev=true` を拒否**） |
+| `preview_urls` | **`false`** | **`false`** |
 | Cloudflare Access | staging 用 Application | **別 Application**（NALIPO 予約と AUD 共有禁止） |
-| NALIPO Routes / カスタムドメイン | — | **本 deploy では変更しない**（wrangler に `[[routes]]` + NALIPO ホストなし） |
+| `[[routes]]` / カスタムドメイン | — | **追加しない** |
 
-**ローカル検証:** `npm run validate:production-config`（`scripts/validate-production-wrangler.mjs`）
+**ローカル検証:** `npm run build:cloudflare` の後 `npm run validate:production-config`（**dry-run 必須**。`.open-next` 無しは失敗）。
 
-deploy 後: Zero Trust で **Preview / Version URL が出ない**ことをダッシュボード確認。
+**初回 Worker 作成後（承認済み deploy のみ）— Dashboard で公開経路ゼロ:**
+
+1. Workers & Pages → **`pizza-lab`**（`pizza-lab-staging` / NALIPO Worker は開かない）
+2. **Settings → Domains & Routes:** **workers.dev = Disabled**、カスタムドメイン **0**、Zone Routes **0**
+3. **Deployments:** **Preview / Version URL** のリンクが **出ない**こと（`preview_urls=false`）
+4. シークレットウィンドウで `https://pizza-lab.<account-subdomain>.workers.dev/` にアクセス → **アプリ本文が表示されない**（404 等）
+5. アカウント **Protect all Workers** が **無効** であること
+
+## 4.1 `workers_dev=true` へ戻す手順（Access 保護完了後のみ）
+
+**前提:** Self-hosted Application（本番 hostname + `/*`）と Worker **Access → All traffic** が有効、`CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` が **`pizza-lab` のみ**に設定済み。
+
+1. `wrangler.toml` の `workers_dev = false` を **`workers_dev = true`** に変更（別コミット・承認後）
+2. `npm run build:cloudflare` → 本番 deploy（`wrangler.toml` のみ — staging deploy 禁止）
+3. 未ログインで hostname へアクセス → **Cloudflare Access ログイン**のみ（200 でアプリ全文が出た場合は workers.dev を即 Disable して調査）
+4. `npm run validate:production-config` は **`workers_dev=false` 必須のため、公開 go-live 後は本検証を「非公開フェーズ専用」として運用**（`workers_dev=true` にしたコミットではこのスクリプトは意図的に失敗する）
+
+deploy 後: Zero Trust / Deployments で **Preview / Version URL が出ない**ことを再確認。
 
 ## 5. Worker Secrets / Vars（本番 `pizza-lab` のみ）
 
@@ -84,11 +101,14 @@ deploy 後: Zero Trust で **Preview / Version URL が出ない**ことをダッ
 ## 8. 承認が必要な次操作（順序案）
 
 1. ~~本番 `wrangler.toml` に `preview_urls = false`~~ ✅
-2. `wrangler d1 migrations apply pizza_lab_db --remote`（0002–0004）— **バックアップ後・メンテ窗口**
-3. Access Application 作成（NALIPO と分離）
-4. Secrets 設定 + `pizza-lab` 初回 deploy
-5. 実機テスト（§6）
-6. staging は **引き続き D1 なし**・`deploy:staging` のみ
+2. ~~`workers_dev = false`（Access まで非公開）~~ ✅
+3. **初回 deploy**（`workers_dev=false`）→ §4 Dashboard 公開経路ゼロ確認
+4. Access Application 作成 + Worker All traffic（NALIPO と分離）
+5. `wrangler d1 migrations apply pizza_lab_db --remote`（0002–0004）— **バックアップ後・メンテ窗口**
+6. Secrets 設定
+7. §4.1 **`workers_dev=true` + 再 deploy**（Access 後のみ）
+8. 実機テスト（§6–§7）
+9. staging は **引き続き D1 なし**・`deploy:staging` のみ
 
 ## 9. 関連ドキュメント
 

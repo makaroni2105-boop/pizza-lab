@@ -2,6 +2,8 @@
 # NALIPO 予約システムとは独立（database_name / binding は pizza_lab 専用）
 
 name = "pizza-lab"
+# workers_dev = false — Access 保護完了まで workers.dev を公開しない（完了後にのみ true へ変更）
+workers_dev = false
 # preview_urls = false — Preview / Version URL を無効（営業 Worker 保護）
 preview_urls = false
 main = ".open-next/worker.js"

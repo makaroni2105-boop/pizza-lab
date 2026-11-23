@@ -14,6 +14,15 @@ const PIZZA_LAB_D1_ID = "06fd466a-3878-4e89-b3d7-2d680bfba17f";
 const NALIPO_D1_ID = "daa3eb2b-5638-4d24-b165-dce7a13a152a";
 
 describe("wrangler.toml (production pizza-lab)", () => {
+  it("keeps production worker non-public until Access (workers_dev=false, preview_urls=false)", () => {
+    const raw = readFileSync(ROOT_WRANGLER, "utf8");
+    expect(raw).toMatch(/name\s*=\s*"pizza-lab"/);
+    expect(raw).toMatch(/workers_dev\s*=\s*false/);
+    expect(raw).not.toMatch(/workers_dev\s*=\s*true/);
+    expect(raw).toMatch(/preview_urls\s*=\s*false/);
+    expect(raw).not.toMatch(/\[\[routes\]\]/i);
+  });
+
   it("defines pizza-lab with pizza_lab_db and preview_urls=false", () => {
     const raw = readFileSync(ROOT_WRANGLER, "utf8");
     expect(raw).toMatch(/name\s*=\s*"pizza-lab"/);
