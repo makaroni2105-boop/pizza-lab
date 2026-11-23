@@ -7,11 +7,17 @@
 
 ## バックアップ（承認後）
 
+**対象 UUID 確認:** `wrangler.toml` の `database_id` = `06fd466a-3878-4e89-b3d7-2d680bfba17f` と export ログの UUID が一致すること。
+
 ```bash
 cd C:\Projects\pizza-lab
 mkdir -p backups 2>$null
 npx wrangler d1 export pizza_lab_db --remote --output=backups/pizza_lab_db-pre-migration-YYYYMMDD.sql
 ```
+
+**保管:** `backups/` は `.gitignore` 対象。チケットに **ファイル名・サイズ・SHA256** を記録（秘密情報は SQL 本文をチャットに貼らない）。
+
+**直近例（2026-11-23）:** `pizza_lab_db-pre-prep-20261123-1225.sql` — remote 0001 適用済み・6 テーブル・`d1_migrations` 含む（ローカル作業ストアのみ）。
 
 ## 復元（メンテナンス窗口・明示承認のみ）
 

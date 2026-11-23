@@ -2,6 +2,8 @@
 # NALIPO 予約システムとは独立（database_name / binding は pizza_lab 専用）
 
 name = "pizza-lab"
+# preview_urls = false — Preview / Version URL を無効（営業 Worker 保護）
+preview_urls = false
 main = ".open-next/worker.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]

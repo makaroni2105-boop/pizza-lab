@@ -32,6 +32,7 @@ describe("wrangler.staging.toml (NALIPO daily staging)", () => {
   it("keeps root wrangler.toml D1 separate from staging file", () => {
     const root = readFileSync(ROOT_WRANGLER, "utf8");
     expect(root).toMatch(/name\s*=\s*"pizza-lab"/);
+    expect(root).toMatch(/preview_urls\s*=\s*false/);
     expect(root).toMatch(/\[\[d1_databases\]\]/);
     expect(root).toMatch(/database_name\s*=\s*"pizza_lab_db"/);
   });
