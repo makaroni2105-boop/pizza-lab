@@ -240,4 +240,52 @@ describe("daily-prep-record handler", () => {
     const list = await handleDailyPrepRecordListRequest(5, { ...testDeps, db });
     expect((list.body as { records: unknown[] }).records).toHaveLength(1);
   });
+
+  it("rejects a second create for the same prep date with a different idempotency key", async () => {
+    const db = createMemoryD1();
+
+  const first = await handleDailyPrepRecordCreateRequest(
+      {
+        totalFlourKg: 10,
+        prepDateJst: "2026-11-22",
+        idempotencyKey: "save-attempt-a",
+      },
+      {
+        ...testDeps,
+        db,
+        fetchWeather: async () => mockWeather,
+        newId: () => "id-date-1",
+        now: () => "2026-11-22T08:00:00.000Z",
+      },
+    );
+
+    const second = await handleDailyPrepRecordCreateRequest(
+      {
+        totalFlourKg: 12,
+        prepDateJst: "2026-11-22",
+        idempotencyKey: "save-attempt-b",
+      },
+      {
+        ...testDeps,
+        db,
+        fetchWeather: async () => mockWeather,
+        newId: () => "id-date-2",
+        now: () => "2026-11-22T09:00:00.000Z",
+      },
+    );
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(409);
+    expect(
+      (second.body as { error?: { code?: string; existingRecordId?: string } })
+        .error?.code,
+    ).toBe("PREP_DATE_EXISTS");
+    expect(
+      (second.body as { error?: { existingRecordId?: string } }).error
+        ?.existingRecordId,
+    ).toBe("id-date-1");
+
+    const list = await handleDailyPrepRecordListRequest(5, { ...testDeps, db });
+    expect((list.body as { records: unknown[] }).records).toHaveLength(1);
+  });
 });

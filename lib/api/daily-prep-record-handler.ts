@@ -15,10 +15,11 @@ import {
   buildWeatherSnapshot,
   cloneDailyPrepRecord,
 } from "@/lib/daily-prep/prep-record-build";
-import { isValidPrepDateJst } from "@/lib/daily-prep/jst-date";
+import { getPrepDateJstString, isValidPrepDateJst } from "@/lib/daily-prep/jst-date";
 import {
   findDailyPrepRecordById,
   findDailyPrepRecordByIdempotencyKey,
+  findDailyPrepRecordByShopAndPrepDate,
   insertDailyPrepRecord,
   insertDailyPrepRecordRevision,
   listDailyPrepRecordRevisions,
@@ -334,6 +335,41 @@ async function loadRecord(
   return findDailyPrepRecordById(persistence.db, id);
 }
 
+async function findRecordByIdempotencyKey(
+  persistence: { useMemory: boolean; memory: DailyPrepRecordMemoryStore; db?: D1Database },
+  key: string,
+): Promise<DailyPrepRecord | null> {
+  if (persistence.useMemory) {
+    return persistence.memory.findByIdempotencyKey(key);
+  }
+
+  if (!persistence.db) {
+    return null;
+  }
+
+  return findDailyPrepRecordByIdempotencyKey(persistence.db, key);
+}
+
+async function findRecordForPrepDate(
+  persistence: { useMemory: boolean; memory: DailyPrepRecordMemoryStore; db?: D1Database },
+  shopId: string | null | undefined,
+  prepDateJst: string,
+): Promise<DailyPrepRecord | null> {
+  if (persistence.useMemory) {
+    return persistence.memory.findByShopAndPrepDate(shopId ?? null, prepDateJst);
+  }
+
+  if (!persistence.db) {
+    return null;
+  }
+
+  return findDailyPrepRecordByShopAndPrepDate(
+    persistence.db,
+    shopId,
+    prepDateJst,
+  );
+}
+
 async function applyUpdate(
   persistence: { useMemory: boolean; memory: DailyPrepRecordMemoryStore; db?: D1Database },
   updated: DailyPrepRecord,
@@ -420,9 +456,9 @@ export async function handleDailyPrepRecordCreateRequest(
     return dbRequiredFailure();
   }
 
-  if (input.idempotencyKey && !persistence.useMemory && persistence.db) {
-    const existing = await findDailyPrepRecordByIdempotencyKey(
-      persistence.db,
+  if (input.idempotencyKey) {
+    const existing = await findRecordByIdempotencyKey(
+      persistence,
       input.idempotencyKey,
     );
     if (existing) {
@@ -432,10 +468,36 @@ export async function handleDailyPrepRecordCreateRequest(
           success: true,
           record: existing,
           idempotentReplay: true,
-          persistence: "d1",
+          persistence: persistence.useMemory ? "memory" : "d1",
         },
       };
     }
+  }
+
+  const nowForPrepDate = deps?.now?.();
+  const effectivePrepDateJst =
+    input.prepDateJst ??
+    getPrepDateJstString(nowForPrepDate ? new Date(nowForPrepDate) : undefined);
+
+  const duplicateForDate = await findRecordForPrepDate(
+    persistence,
+    input.shopId,
+    effectivePrepDateJst,
+  );
+
+  if (duplicateForDate) {
+    return {
+      status: 409,
+      body: {
+        success: false,
+        error: {
+          code: "PREP_DATE_EXISTS",
+          message:
+            "この仕込み日の記録は既にあります。内容を直す場合は記録一覧から更新してください。",
+          existingRecordId: duplicateForDate.id,
+        },
+      },
+    };
   }
 
   const fetchWeather = deps?.fetchWeather ?? fetchWeatherFromProvider;

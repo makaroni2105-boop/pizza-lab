@@ -10,6 +10,11 @@ import type {
 export interface DailyPrepRecordMemoryStore {
   list(limit: number): DailyPrepRecord[];
   findById(id: string): DailyPrepRecord | null;
+  findByIdempotencyKey(key: string): DailyPrepRecord | null;
+  findByShopAndPrepDate(
+    shopId: string | null,
+    prepDateJst: string,
+  ): DailyPrepRecord | null;
   insert(record: DailyPrepRecord): void;
   update(record: DailyPrepRecord): boolean;
   insertRevision(revision: DailyPrepRecordRevision): void;
@@ -34,6 +39,24 @@ export function createDailyPrepRecordMemoryStore(): DailyPrepRecordMemoryStore {
     },
     findById(id) {
       return records.get(id) ?? null;
+    },
+    findByIdempotencyKey(key) {
+      for (const record of records.values()) {
+        if (record.idempotencyKey === key) {
+          return structuredClone(record);
+        }
+      }
+      return null;
+    },
+    findByShopAndPrepDate(shopId, prepDateJst) {
+      const shopKey = shopId ?? "";
+      for (const record of records.values()) {
+        const recordShop = record.shopId ?? "";
+        if (record.prepDateJst === prepDateJst && recordShop === shopKey) {
+          return structuredClone(record);
+        }
+      }
+      return null;
     },
     insert(record) {
       records.set(record.id, structuredClone(record));

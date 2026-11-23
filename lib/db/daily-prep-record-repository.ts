@@ -53,6 +53,27 @@ export async function findDailyPrepRecordByIdempotencyKey(
   return row ? rowToRecord(row) : null;
 }
 
+export function dailyPrepShopScopeKey(shopId: string | null | undefined): string {
+  return shopId ?? "";
+}
+
+export async function findDailyPrepRecordByShopAndPrepDate(
+  db: D1Database,
+  shopId: string | null | undefined,
+  prepDateJst: string,
+): Promise<DailyPrepRecord | null> {
+  const shopKey = dailyPrepShopScopeKey(shopId);
+  const row = await queryFirst<PizzaLabDailyPrepRecordRow>(
+    db,
+    `SELECT * FROM ${RECORDS}
+      WHERE prep_date_jst = ? AND COALESCE(shop_id, '') = ?`,
+    prepDateJst,
+    shopKey,
+  );
+
+  return row ? rowToRecord(row) : null;
+}
+
 export async function findDailyPrepRecordById(
   db: D1Database,
   id: string,

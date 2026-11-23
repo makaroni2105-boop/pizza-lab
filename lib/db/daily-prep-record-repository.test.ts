@@ -5,6 +5,7 @@ import { buildDailyPrepRecordFromCompute } from "@/lib/daily-prep/prep-record-bu
 import { createMemoryD1 } from "./d1-mock";
 import {
   findDailyPrepRecordById,
+  findDailyPrepRecordByShopAndPrepDate,
   insertDailyPrepRecord,
   insertDailyPrepRecordRevision,
   listDailyPrepRecords,
@@ -53,5 +54,12 @@ describe("daily-prep-record repository", () => {
 
     const list = await listDailyPrepRecords(db, 10);
     expect(list).toHaveLength(1);
+
+    const byDate = await findDailyPrepRecordByShopAndPrepDate(
+      db,
+      null,
+      "2026-11-20",
+    );
+    expect(byDate?.id).toBe("repo-1");
   });
 });

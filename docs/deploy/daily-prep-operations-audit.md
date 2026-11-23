@@ -46,6 +46,7 @@
 1. `0001_initial.sql` — 6× `pizza_lab_*` 基盤
 2. `0002_daily_prep_records.sql` — 記録 + revisions
 3. `0003_daily_prep_process_readings.sql` — process JSON + idempotency
+4. `0004_daily_prep_unique_prep_date.sql` — 店舗スコープ×仕込み日 UNIQUE
 
 **リモート:** 別チケットで `export` → `apply --remote`（本タスクでは未実行）
 
@@ -67,14 +68,23 @@ npx wrangler d1 export pizza_lab_db --remote --output=backups/pizza_lab_db_YYYYM
 - 未認証 → **401**
 - 気象失敗 → 保存可、`fetchStatus=unavailable`
 - `idempotencyKey` 再送 → 重複 INSERT なし
+- **同日・別保存操作**（別 `idempotencyKey`）→ **409 `PREP_DATE_EXISTS`**（DB UNIQUE + API 事前チェック）
 - `expectedRevision` 不一致 → **409**
 - 更新前スナップショット → `pizza_lab_daily_prep_record_revisions`
+
+## 5.1 公開前チェック（未完了項目）
+
+| # | 項目 | 状態 |
+|---|------|------|
+| P1 | **Open-Meteo 商用利用条件** — Terms / Pricing の人手確認、必要なら有料プランまたは代替データ | ⬜ **未確認**（公開までブロッカー扱い可） |
+| P2 | リモート D1 migration 0002–0004 | ⬜ |
+| P3 | 本番 Cloudflare Access Application（NALIPO と分離） | ⬜ |
 
 ## 6. 安全な営業公開手順（概要）
 
 1. 本番 Access Application 作成（NALIPO と分離）— ダッシュボード
 2. `wrangler.toml` の `database_id` 目視確認（`06fd466a-…`）
-3. リモート D1 migration 0002/0003（未適用分）
+3. リモート D1 migration 0002–0004（未適用分）
 4. Worker `pizza-lab` に D1 + Access env を設定
 5. `npm test` / staging smoke（計算のみ）→ 本番 smoke（保存 1 件 + 一覧 + PATCH）
 6. staging は引き続き D1 なし（記録 API は 503 が期待動作）

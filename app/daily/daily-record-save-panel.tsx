@@ -105,7 +105,9 @@ export function DailyRecordSavePanel({
           data.error?.message ??
             (code === "DB_UNAVAILABLE"
               ? "データベースに接続できないため保存できません"
-              : "仕込み記録を保存できませんでした"),
+              : code === "PREP_DATE_EXISTS"
+                ? "この仕込み日の記録は既にあります。記録一覧から更新してください。"
+                : "仕込み記録を保存できませんでした"),
         );
         return;
       }
