@@ -30,7 +30,7 @@ describe("weather-cache-repository", () => {
         fetchedAt,
         latitude: 35.6762,
         longitude: 139.6503,
-        source: "open-meteo",
+        source: "openweathermap",
       },
       expiresAt,
     );
@@ -57,7 +57,7 @@ describe("weather-cache-repository", () => {
         fetchedAt,
         latitude: 35.6762,
         longitude: 139.6503,
-        source: "open-meteo",
+        source: "openweathermap",
       },
       expiresAt,
     );
@@ -84,7 +84,7 @@ describe("weather-cache-repository", () => {
         fetchedAt,
         latitude: 35.6762,
         longitude: 139.6503,
-        source: "open-meteo",
+        source: "openweathermap",
       },
       expiresAt,
     );
@@ -109,7 +109,7 @@ describe("weather-cache-repository", () => {
         longitude: 139.6503,
         ambient_temp_c: 28,
         ambient_humidity_pct: 65,
-        source: "open-meteo",
+        source: "openweathermap",
         fetched_at: "2026-07-07T10:00:00.000Z",
         expires_at: "2026-07-07T10:30:00.000Z",
       },

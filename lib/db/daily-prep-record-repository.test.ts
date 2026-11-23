@@ -18,7 +18,7 @@ describe("daily-prep-record repository", () => {
       id: "repo-1",
       input: { totalFlourKg: 10, prepDateJst: "2026-11-20" },
       weather: {
-        provider: "open-meteo",
+        provider: "openweathermap",
         coordinates: {
           latitude: 34.2386,
           longitude: 132.5616,

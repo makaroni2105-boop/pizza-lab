@@ -5,7 +5,7 @@ import { NALIPO_DAILY_PREP_BASELINE } from "@/types/daily-prep";
 import { buildDailyPrepRecordFromCompute, materialsDifferFromComputed } from "./prep-record-build";
 
 const weather = {
-  provider: "open-meteo",
+  provider: "openweathermap",
   coordinates: {
     latitude: 34.2386,
     longitude: 132.5616,

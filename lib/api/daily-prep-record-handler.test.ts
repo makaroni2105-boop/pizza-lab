@@ -8,15 +8,17 @@ import {
 } from "@/lib/api/daily-prep-record-handler";
 import { createMemoryD1 } from "@/lib/db/d1-mock";
 import { createDailyPrepRecordMemoryStore } from "@/lib/db/daily-prep-record-memory-store";
+import type { DailyPrepRecord } from "@/types/daily-prep-record";
 import type { WeatherCurrent } from "@/lib/weather/weather-types";
 
 const mockWeather: WeatherCurrent = {
   ambientTempC: 17.5,
   ambientHumidityPct: 55,
+  observationTimeIso: "2026-11-23T00:50:00.000Z",
   fetchedAt: "2026-11-23T01:00:00.000Z",
   latitude: 34.2386,
   longitude: 132.5616,
-  source: "open-meteo",
+  source: "openweathermap",
 };
 
 const testDeps = {
@@ -105,6 +107,34 @@ describe("daily-prep-record handler", () => {
     }
   });
 
+  it("saves with unavailable weather when API key is not configured", async () => {
+    const memory = createDailyPrepRecordMemoryStore();
+    const previous = process.env.OPENWEATHER_API_KEY;
+    delete process.env.OPENWEATHER_API_KEY;
+
+    const created = await handleDailyPrepRecordCreateRequest(
+      { totalFlourKg: 10, prepDateJst: "2026-11-24" },
+      {
+        ...testDeps,
+        memory,
+        newId: () => "id-no-key",
+        now: () => "2026-11-24T02:00:00.000Z",
+      },
+    );
+
+    if (previous === undefined) {
+      delete process.env.OPENWEATHER_API_KEY;
+    } else {
+      process.env.OPENWEATHER_API_KEY = previous;
+    }
+
+    expect(created.status).toBe(201);
+    const record = (created.body as { record: { weather: { fetchStatus: string; fetchErrorCode?: string } } })
+      .record;
+    expect(record.weather.fetchStatus).toBe("unavailable");
+    expect(record.weather.fetchErrorCode).toBe("api_key_not_configured");
+  });
+
   it("saves when weather fetch fails", async () => {
     const memory = createDailyPrepRecordMemoryStore();
 
@@ -148,6 +178,12 @@ describe("daily-prep-record handler", () => {
         memory,
         now: () => "2026-11-22T12:00:00.000Z",
       },
+    );
+
+    const afterUpdate = (updated.body as { record: DailyPrepRecord }).record;
+    expect(afterUpdate.weather.ambientTempC).toBe(17.5);
+    expect(afterUpdate.weather.observationTimeIso).toBe(
+      "2026-11-23T00:50:00.000Z",
     );
 
     expect(updated.status).toBe(200);
