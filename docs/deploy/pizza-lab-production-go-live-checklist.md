@@ -3,6 +3,15 @@
 > **公開前ゲート（TOML）:** `npm run validate:production-go-live`（**`workers_dev=true` コミット後のみ**）  
 > **非公開フェーズ:** `npm run validate:production-config`（**`workers_dev=false` 必須** — 両方同時成功はしない）
 
+**go-live 前のローカル検証（本番 `wrangler.toml` 未変更）:**
+
+1. リポジトリ直下に `wrangler.go-live-dryrun.local.toml`（gitignore）を作成 — **代入行のみ** `workers_dev = true`（コメントの `workers_dev = false` はそのまま可）
+2. `npm run build:cloudflare`
+3. PowerShell: `$env:WRANGLER_GO_LIVE_CONFIG="wrangler.go-live-dryrun.local.toml"; npm run validate:production-go-live`
+4. 検証後に一時ファイルを削除
+
+ゲートは **TOML パーサ + トップレベル代入行のみ** で `workers_dev` を判定（コメント誤検知なし）。
+
 ---
 
 ## A. リポジトリ・ビルド（ローカル / CI）

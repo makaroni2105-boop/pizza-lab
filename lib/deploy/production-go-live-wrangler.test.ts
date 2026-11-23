@@ -20,10 +20,10 @@ describe("validate:production-go-live script", () => {
     );
   });
 
-  it("requires workers_dev=true in script logic", () => {
+  it("uses structured TOML gate (not raw regex on comments)", () => {
     const raw = readFileSync(GO_LIVE_SCRIPT, "utf8");
-    expect(raw).toContain("workers_dev = true is required for go-live");
-    expect(raw).toContain("workers_dev = false is not allowed for go-live");
+    expect(raw).toContain("wrangler-production-gate.mjs");
+    expect(raw).toContain("WRANGLER_GO_LIVE_CONFIG");
   });
 
   it("rejects current private wrangler.toml (workers_dev=false)", () => {

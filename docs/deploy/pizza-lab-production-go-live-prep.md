@@ -53,10 +53,12 @@
 
 **前提:** Self-hosted Application（本番 hostname + `/*`）と Worker **Access → All traffic** が有効、`CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` が **`pizza-lab` のみ**に設定済み。
 
-1. `wrangler.toml` の `workers_dev = false` を **`workers_dev = true`** に変更（別コミット・承認後）
-2. `npm run build:cloudflare` → **`npm run deploy:production:phase0`**（`wrangler.toml` のみ — staging deploy 禁止）
-3. 未ログインで hostname へアクセス → **Cloudflare Access ログイン**のみ（200 でアプリ全文が出た場合は workers.dev を即 Disable して調査）
-4. 公開フェーズは **`npm run validate:production-go-live`**（`workers_dev=true` 必須）。`validate:production-config` は **非公開専用** — go-live コミットでは **意図的に失敗**（[checklist](./pizza-lab-production-go-live-checklist.md)）
+1. **承認前（任意）:** 本番 toml を変えず `WRANGLER_GO_LIVE_CONFIG=wrangler.go-live-dryrun.local.toml` で `npm run validate:production-go-live`（ゲート + dry-run。ファイルはリポジトリルート・gitignore）
+2. `wrangler.toml` の **代入行のみ** `workers_dev = false` → **`workers_dev = true`**（別コミット・承認後。説明コメントは変更しない）
+3. `npm run build:cloudflare` → **`npm run validate:production-go-live`** → 成功まで **deploy しない**
+4. **`npm run deploy:production:phase0`**（人間ターミナル）— `opennextjs-cloudflare deploy --config wrangler.toml`（staging / dangerous build フラグなし）
+5. 未ログインで hostname へアクセス → **Cloudflare Access ログイン**のみ（200 でアプリ全文が出た場合は workers.dev を即 Disable して調査）
+6. go-live コミット後は `validate:production-config` が **意図的に失敗**（非公開専用）— [checklist](./pizza-lab-production-go-live-checklist.md)
 
 deploy 後: Zero Trust / Deployments で **Preview / Version URL が出ない**ことを再確認。
 

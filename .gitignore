@@ -45,6 +45,7 @@ next-env.d.ts
 
 # cloudflare wrangler (local D1)
 .wrangler/
+wrangler.go-live-dryrun.local.toml
 
 # Local backups / D1 exports
 backups/

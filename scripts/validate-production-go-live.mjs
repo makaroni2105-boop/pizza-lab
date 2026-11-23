@@ -5,65 +5,41 @@
  *
  * 非公開フェーズは validate:production-config（workers_dev=false）を使用する。
  * 本スクリプトは workers_dev=false の wrangler.toml では意図的に失敗する。
+ *
+ * 環境変数 WRANGLER_GO_LIVE_CONFIG — リポジトリ直下相対パス（go-live 前の一時 toml 検証用）。
+ * 一時ファイルはリポジトリルートに置くこと（.open-next 相対パス解決のため）。
  */
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+
+import {
+  resolveGoLiveConfigPath,
+  validateProductionGoLiveToml,
+} from "./lib/wrangler-production-gate.mjs";
 
 const ROOT = process.cwd();
-const PROD_TOML = join(ROOT, "wrangler.toml");
-const PIZZA_LAB_D1_ID = "06fd466a-3878-4e89-b3d7-2d680bfba17f";
-const NALIPO_D1_ID = "daa3eb2b-5638-4d24-b165-dce7a13a152a";
+const CONFIG_REL = process.env.WRANGLER_GO_LIVE_CONFIG ?? "wrangler.toml";
 
 function fail(message) {
   console.error(`validate:production-go-live — ${message}`);
   process.exit(1);
 }
 
-const raw = readFileSync(PROD_TOML, "utf8");
-
-if (!/name\s*=\s*"pizza-lab"/.test(raw)) {
-  fail('name must be "pizza-lab" (not pizza-lab-staging)');
-}
-if (!/workers_dev\s*=\s*true/.test(raw)) {
-  fail(
-    "workers_dev = true is required for go-live (keep workers_dev = false until Access + checklist complete; use validate:production-config for private phase)",
-  );
-}
-if (/workers_dev\s*=\s*false/.test(raw)) {
-  fail("workers_dev = false is not allowed for go-live; use validate:production-config for private phase");
-}
-if (!/preview_urls\s*=\s*false/.test(raw)) {
-  fail("preview_urls = false is required for production Worker");
-}
-if (!/database_name\s*=\s*"pizza_lab_db"/.test(raw)) {
-  fail('database_name must be "pizza_lab_db"');
-}
-if (!new RegExp(`database_id\\s*=\\s*"${PIZZA_LAB_D1_ID}"`).test(raw)) {
-  fail(`database_id must be pizza_lab_db UUID ${PIZZA_LAB_D1_ID}`);
-}
-if (/database_name\s*=\s*"nalipo-db"/.test(raw)) {
-  fail("must not bind nalipo-db");
-}
-if (/database_name\s*=\s*"nalipo-takeout-db"/.test(raw)) {
-  fail("must not bind nalipo-takeout-db");
-}
-if (raw.includes(NALIPO_D1_ID)) {
-  fail("must not reference NALIPO reservation database_id");
-}
-if (!/binding\s*=\s*"DB"/.test(raw)) {
-  fail('D1 binding must be "DB"');
-}
-if (!/binding\s*=\s*"ASSETS"/.test(raw)) {
-  fail('ASSETS binding must remain');
-}
-if (!/service\s*=\s*"pizza-lab"/.test(raw)) {
-  fail('WORKER_SELF_REFERENCE service must be "pizza-lab"');
+const resolved = resolveGoLiveConfigPath(ROOT, CONFIG_REL);
+if (typeof resolved !== "string") {
+  fail(resolved.message);
 }
 
-if (/\[\[routes\]\]/i.test(raw)) {
-  fail("wrangler.toml must not define [[routes]] (no custom domains or zone routes in wrangler)");
+if (!existsSync(resolved)) {
+  fail(`config file not found: ${CONFIG_REL}`);
+}
+
+const raw = readFileSync(resolved, "utf8");
+const gate = validateProductionGoLiveToml(raw);
+if (gate !== true) {
+  fail(gate.message);
 }
 
 const openNextMain = join(ROOT, ".open-next", "worker.js");
@@ -73,9 +49,14 @@ if (!existsSync(openNextMain)) {
   );
 }
 
+const configArg =
+  resolved === join(ROOT, "wrangler.toml")
+    ? ""
+    : ` --config ${relative(ROOT, resolved).replace(/\\/g, "/")}`;
+
 let dryRunOutput;
 try {
-  dryRunOutput = execSync("npx wrangler deploy --dry-run", {
+  dryRunOutput = execSync(`npx wrangler deploy --dry-run${configArg}`, {
     encoding: "utf8",
     cwd: ROOT,
     stdio: ["ignore", "pipe", "pipe"],
