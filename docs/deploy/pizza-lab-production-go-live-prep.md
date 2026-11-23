@@ -56,7 +56,7 @@
 1. `wrangler.toml` の `workers_dev = false` を **`workers_dev = true`** に変更（別コミット・承認後）
 2. `npm run build:cloudflare` → **`npm run deploy:production:phase0`**（`wrangler.toml` のみ — staging deploy 禁止）
 3. 未ログインで hostname へアクセス → **Cloudflare Access ログイン**のみ（200 でアプリ全文が出た場合は workers.dev を即 Disable して調査）
-4. `npm run validate:production-config` は **`workers_dev=false` 必須のため、公開 go-live 後は本検証を「非公開フェーズ専用」として運用**（`workers_dev=true` にしたコミットではこのスクリプトは意図的に失敗する）
+4. 公開フェーズは **`npm run validate:production-go-live`**（`workers_dev=true` 必須）。`validate:production-config` は **非公開専用** — go-live コミットでは **意図的に失敗**（[checklist](./pizza-lab-production-go-live-checklist.md)）
 
 deploy 後: Zero Trust / Deployments で **Preview / Version URL が出ない**ことを再確認。
 
@@ -113,6 +113,7 @@ deploy 後: Zero Trust / Deployments で **Preview / Version URL が出ない**�
 ## 9. 関連ドキュメント
 
 - [pizza-lab-phase0-human-deploy.md](./pizza-lab-phase0-human-deploy.md) — Phase 0 初回作成（人間承認・NALIPO Gate 非使用）
+- [pizza-lab-production-go-live-checklist.md](./pizza-lab-production-go-live-checklist.md) — 営業公開前提（Access・Secrets・D1・deploy 分離）
 - [daily-prep-operations-audit.md](./daily-prep-operations-audit.md)
 - [daily-prep-backup-restore.md](./daily-prep-backup-restore.md)
 - [staging-nalipo-daily-go-live.md](./staging-nalipo-daily-go-live.md)
