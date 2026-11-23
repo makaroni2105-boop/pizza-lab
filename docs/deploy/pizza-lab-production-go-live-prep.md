@@ -112,6 +112,7 @@ deploy 後: Zero Trust / Deployments で **Preview / Version URL が出ない**�
 
 ## 9. 関連ドキュメント
 
+- [pizza-lab-phase0-human-deploy.md](./pizza-lab-phase0-human-deploy.md) — Phase 0 初回作成（人間承認・NALIPO Gate 非使用）
 - [daily-prep-operations-audit.md](./daily-prep-operations-audit.md)
 - [daily-prep-backup-restore.md](./daily-prep-backup-restore.md)
 - [staging-nalipo-daily-go-live.md](./staging-nalipo-daily-go-live.md)
