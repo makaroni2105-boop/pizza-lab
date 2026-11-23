@@ -14,6 +14,7 @@ import {
 import {
   fetchWeatherFromProvider,
   validateCoordinates,
+  WeatherFetchError,
 } from "./weather-client";
 import {
   WeatherCache,
@@ -134,14 +135,26 @@ export async function handleWeatherRequest(
         expiresAt: new Date(entry.expiresAt).toISOString(),
       },
     };
-  } catch {
+  } catch (error) {
+    const code =
+      error instanceof WeatherFetchError
+        ? error.code === "API_KEY_NOT_CONFIGURED"
+          ? "API_KEY_NOT_CONFIGURED"
+          : "WEATHER_FETCH_FAILED"
+        : "WEATHER_FETCH_FAILED";
+
+    const message =
+      code === "API_KEY_NOT_CONFIGURED"
+        ? "天気 API キーが未設定のため外気温を取得できません"
+        : "天気情報を取得できませんでした。手入力または既定値をご利用ください";
+
     return {
       status: 200,
       body: {
         success: false,
         error: {
-          code: "WEATHER_FETCH_FAILED",
-          message: "天気情報を取得できませんでした。手入力または既定値をご利用ください",
+          code,
+          message,
         },
       },
     };

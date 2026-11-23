@@ -100,6 +100,7 @@ function rowToWeatherCurrent(row: PizzaLabWeatherCacheRow): WeatherCurrent {
   return {
     ambientTempC: row.ambient_temp_c,
     ambientHumidityPct: row.ambient_humidity_pct,
+    observationTimeIso: null,
     fetchedAt: row.fetched_at,
     latitude: row.latitude,
     longitude: row.longitude,

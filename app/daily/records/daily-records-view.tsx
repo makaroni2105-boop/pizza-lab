@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { OpenWeatherAttribution } from "@/lib/weather/openweather-attribution";
 import type { DailyPrepRecord } from "@/types/daily-prep-record";
 
 import styles from "../daily.module.css";
@@ -209,6 +210,7 @@ export function DailyRecordsView() {
             maxFlour={maxFlour}
             maxYeast={maxYeast}
           />
+          <OpenWeatherAttribution />
 
           <section className={styles.recordListSection} aria-labelledby="record-list-title">
             <h2 id="record-list-title" className={styles.sectionTitle}>

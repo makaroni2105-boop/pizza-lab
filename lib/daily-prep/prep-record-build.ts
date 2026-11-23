@@ -18,6 +18,7 @@ import {
   type DailyPrepComputeResult,
   type DailyPrepSessionAdjustment,
 } from "@/types/daily-prep";
+import { WEATHER_PROVIDER } from "@/lib/weather/weather-constants";
 import type { WeatherCurrent } from "@/lib/weather/weather-types";
 
 import { getPrepDateJstString, isValidPrepDateJst } from "./jst-date";
@@ -69,8 +70,13 @@ export function materialsDifferFromComputed(
 
 export function buildWeatherSnapshot(
   weather: WeatherCurrent,
-  observationTimeIso: string | null,
+  observationTimeIso?: string | null,
 ): DailyPrepRecordWeatherSnapshot {
+  const observed =
+    observationTimeIso === undefined
+      ? weather.observationTimeIso
+      : observationTimeIso;
+
   return {
     provider: weather.source,
     coordinates: {
@@ -79,7 +85,7 @@ export function buildWeatherSnapshot(
       labelJa: KURE_WEATHER_COORDINATES.labelJa,
     },
     fetchedAtIso: weather.fetchedAt,
-    observationTimeIso,
+    observationTimeIso: observed,
     fetchStatus: "ok",
     fetchErrorCode: null,
     ambientTempC: weather.ambientTempC,
@@ -92,7 +98,7 @@ export function buildUnavailableWeatherSnapshot(
   errorCode: string,
 ): DailyPrepRecordWeatherSnapshot {
   return {
-    provider: "open-meteo",
+    provider: WEATHER_PROVIDER,
     coordinates: {
       latitude: KURE_WEATHER_COORDINATES.latitude,
       longitude: KURE_WEATHER_COORDINATES.longitude,

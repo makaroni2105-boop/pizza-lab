@@ -1,34 +1,53 @@
 /**
  * 外部天気 API クライアント（fetch ベース）。
- * プロバイダ: Open-Meteo（API キー不要）。
+ * プロバイダ: OpenWeather Current Weather API（サーバー側・API キー必須）。
  */
 
-import type { OpenMeteoCurrentResponse, WeatherCoordinates, WeatherCurrent } from "./weather-types";
-import { WEATHER_PROVIDER } from "./weather-types";
+import {
+  OPENWEATHER_CURRENT_WEATHER_URL,
+  WEATHER_FETCH_TIMEOUT_MS,
+  WEATHER_PROVIDER,
+} from "./weather-constants";
+import { WeatherFetchError } from "./weather-errors";
+import { readOpenWeatherApiKey } from "./openweather-api-key";
+import type {
+  OpenWeatherCurrentResponse,
+  WeatherCoordinates,
+  WeatherCurrent,
+} from "./weather-types";
+
+export { WeatherFetchError } from "./weather-errors";
+export { readOpenWeatherApiKey } from "./openweather-api-key";
 
 export interface FetchWeatherOptions {
   coordinates: WeatherCoordinates;
+  apiKey?: string | null;
   fetchImpl?: typeof fetch;
   fetchedAt?: string;
+  timeoutMs?: number;
 }
 
-export function buildOpenMeteoUrl(coordinates: WeatherCoordinates): string {
+export function buildOpenWeatherUrl(
+  coordinates: WeatherCoordinates,
+  apiKey: string,
+): string {
   const params = new URLSearchParams({
-    latitude: String(coordinates.latitude),
-    longitude: String(coordinates.longitude),
-    current: "temperature_2m,relative_humidity_2m",
+    lat: String(coordinates.latitude),
+    lon: String(coordinates.longitude),
+    units: "metric",
+    appid: apiKey,
   });
 
-  return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+  return `${OPENWEATHER_CURRENT_WEATHER_URL}?${params.toString()}`;
 }
 
-export function parseOpenMeteoResponse(
-  data: OpenMeteoCurrentResponse,
+export function parseOpenWeatherResponse(
+  data: OpenWeatherCurrentResponse,
   coordinates: WeatherCoordinates,
   fetchedAt: string,
 ): WeatherCurrent | null {
-  const temp = data.current?.temperature_2m;
-  const humidity = data.current?.relative_humidity_2m;
+  const temp = data.main?.temp;
+  const humidity = data.main?.humidity;
 
   if (
     typeof temp !== "number" ||
@@ -39,9 +58,15 @@ export function parseOpenMeteoResponse(
     return null;
   }
 
+  const observationTimeIso =
+    typeof data.dt === "number" && Number.isFinite(data.dt)
+      ? new Date(data.dt * 1000).toISOString()
+      : null;
+
   return {
     ambientTempC: temp,
     ambientHumidityPct: humidity,
+    observationTimeIso,
     fetchedAt,
     latitude: coordinates.latitude,
     longitude: coordinates.longitude,
@@ -52,26 +77,63 @@ export function parseOpenMeteoResponse(
 export async function fetchWeatherFromProvider(
   options: FetchWeatherOptions,
 ): Promise<WeatherCurrent> {
+  const apiKey =
+    options.apiKey === undefined
+      ? readOpenWeatherApiKey()
+      : options.apiKey?.trim() || null;
+
+  if (!apiKey) {
+    throw new WeatherFetchError(
+      "API_KEY_NOT_CONFIGURED",
+      "OPENWEATHER_API_KEY is not configured",
+    );
+  }
+
   const fetchImpl = options.fetchImpl ?? fetch;
   const fetchedAt = options.fetchedAt ?? new Date().toISOString();
-  const url = buildOpenMeteoUrl(options.coordinates);
+  const url = buildOpenWeatherUrl(options.coordinates, apiKey);
+  const timeoutMs = options.timeoutMs ?? WEATHER_FETCH_TIMEOUT_MS;
 
-  const response = await fetchImpl(url, {
-    headers: { Accept: "application/json" },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    throw new Error(`Weather provider returned ${response.status}`);
+  try {
+    const response = await fetchImpl(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new WeatherFetchError(
+        "HTTP_ERROR",
+        `Weather provider returned ${response.status}`,
+      );
+    }
+
+    const data = (await response.json()) as OpenWeatherCurrentResponse;
+    const weather = parseOpenWeatherResponse(data, options.coordinates, fetchedAt);
+
+    if (!weather) {
+      throw new WeatherFetchError(
+        "INCOMPLETE_RESPONSE",
+        "Weather provider response was incomplete",
+      );
+    }
+
+    return weather;
+  } catch (error) {
+    if (error instanceof WeatherFetchError) {
+      throw error;
+    }
+
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new WeatherFetchError("TIMEOUT", "Weather fetch timed out");
+    }
+
+    throw new WeatherFetchError("NETWORK", "Weather fetch failed");
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = (await response.json()) as OpenMeteoCurrentResponse;
-  const weather = parseOpenMeteoResponse(data, options.coordinates, fetchedAt);
-
-  if (!weather) {
-    throw new Error("Weather provider response was incomplete");
-  }
-
-  return weather;
 }
 
 export function isValidLatitude(value: number): boolean {

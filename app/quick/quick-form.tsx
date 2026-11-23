@@ -8,6 +8,7 @@ import {
   DEFAULT_WEATHER_COORDINATES,
   type WeatherApiResponse,
 } from "@/lib/weather/weather-types";
+import { OpenWeatherAttribution } from "@/lib/weather/openweather-attribution";
 import { getDemoShopProfile } from "@/lib/profile/demo-profiles";
 import {
   DEMO_SHOP_ID,
@@ -420,6 +421,7 @@ export function QuickForm() {
               未取得の場合は DIE が既定値で補完します
             </p>
           )}
+          <OpenWeatherAttribution compact />
         </div>
 
         <div className={styles.field}>

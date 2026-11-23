@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { buildActualUsageFromForm } from "@/lib/daily-prep/actual-usage-parse";
+import { OpenWeatherAttribution } from "@/lib/weather/openweather-attribution";
 import { getPrepDateJstString } from "@/lib/daily-prep/jst-date";
 import type { DailyPrepComputeResult, DailyPrepSessionAdjustment } from "@/types/daily-prep";
 import type { DailyPrepDoughState11am } from "@/types/daily-prep-record";
@@ -311,6 +312,7 @@ export function DailyRecordSavePanel({
         </p>
       ) : null}
 
+      <OpenWeatherAttribution compact />
       <p className={styles.recordNavHint}>
         <Link href="/daily/records">記録の確認・推移グラフ</Link>
         （/daily 内）

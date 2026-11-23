@@ -16,7 +16,8 @@ const sampleWeather: WeatherCurrent = {
   fetchedAt: "2026-07-06T10:00:00.000Z",
   latitude: 35.6762,
   longitude: 139.6503,
-  source: "open-meteo",
+  observationTimeIso: "2026-07-06T09:55:00.000Z",
+  source: "openweathermap",
 };
 
 describe("handleWeatherRequest", () => {
@@ -172,6 +173,27 @@ describe("handleWeatherRequest", () => {
     if (result.body.success) {
       expect(result.body.cached).toBe(true);
       expect(result.body.weather.ambientTempC).toBe(28);
+    }
+  });
+
+  it("returns API_KEY_NOT_CONFIGURED when provider has no key", async () => {
+    const previous = process.env.OPENWEATHER_API_KEY;
+    delete process.env.OPENWEATHER_API_KEY;
+
+    const result = await handleWeatherRequest(34.2386, 132.5616, {
+      cache: new WeatherCache(),
+      now: () => Date.now(),
+    });
+
+    if (previous === undefined) {
+      delete process.env.OPENWEATHER_API_KEY;
+    } else {
+      process.env.OPENWEATHER_API_KEY = previous;
+    }
+
+    expect(result.body.success).toBe(false);
+    if (!result.body.success) {
+      expect(result.body.error.code).toBe("API_KEY_NOT_CONFIGURED");
     }
   });
 });

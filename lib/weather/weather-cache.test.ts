@@ -13,7 +13,8 @@ const sampleWeather: WeatherCurrent = {
   fetchedAt: "2026-07-06T10:00:00.000Z",
   latitude: 35.6762,
   longitude: 139.6503,
-  source: "open-meteo",
+  observationTimeIso: null,
+  source: "openweathermap",
 };
 
 describe("weather-cache", () => {

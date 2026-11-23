@@ -43,9 +43,16 @@
 
 ## 4. 天気 API
 
-| サービス | キー | 方針 |
-|----------|------|------|
-| Open-Meteo | 不要 | 現状のまま |
+| 変数 | 必須 | 用途 |
+|------|------|------|
+| `OPENWEATHER_API_KEY` | 本番で外気取得する場合 | Cloudflare **Secret** のみ。git / ブラウザに載せない |
+
+| サービス | 方針 |
+|----------|------|
+| OpenWeather Current Weather 2.5 | サーバー側プロキシ（`lib/weather/`） |
+| キー未設定 | 外向き通信なし・記録は `unavailable` で保存可 |
+
+詳細: [docs/weather/openweather-usage.md](../weather/openweather-usage.md)
 
 ---
 

@@ -76,7 +76,7 @@ npx wrangler d1 export pizza_lab_db --remote --output=backups/pizza_lab_db_YYYYM
 
 | # | 項目 | 状態 |
 |---|------|------|
-| P1 | **Open-Meteo 商用利用条件** — Terms / Pricing の人手確認、必要なら有料プランまたは代替データ | ⬜ **未確認**（公開までブロッカー扱い可） |
+| P1 | **OpenWeather** — 無料枠・商用サービス化時の Terms 確認、`OPENWEATHER_API_KEY` を本番 Secret に設定 | ⬜ |
 | P2 | リモート D1 migration 0002–0004 | ⬜ |
 | P3 | 本番 Cloudflare Access Application（NALIPO と分離） | ⬜ |
 
@@ -91,6 +91,6 @@ npx wrangler d1 export pizza_lab_db --remote --output=backups/pizza_lab_db_YYYYM
 
 ## 7. 関連
 
-- [open-meteo-usage.md](../weather/open-meteo-usage.md)
+- [openweather-usage.md](../weather/openweather-usage.md)
 - [staging-nalipo-daily-go-live.md](./staging-nalipo-daily-go-live.md)
 - [security.md](./security.md)

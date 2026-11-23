@@ -12,7 +12,7 @@ import { NALIPO_DAILY_PREP_BASELINE } from "@/types/daily-prep";
 
 export const PIZZA_LAB_DAILY_PREP_RECORD_SCHEMA_VERSION = 1 as const;
 
-/** 呉市（広島）周辺 — Open-Meteo 取得用 */
+/** 呉市（広島）周辺 — OpenWeather 取得用 */
 export const KURE_WEATHER_COORDINATES = {
   latitude: 34.2386,
   longitude: 132.5616,
@@ -43,7 +43,7 @@ export interface DailyPrepRecordWeatherSnapshot {
   };
   /** 気象 API 呼び出し時刻（ISO UTC） */
   fetchedAtIso: string;
-  /** 取得データの対象時刻（Open-Meteo current.time、ISO） */
+  /** 取得データの対象時刻（プロバイダ観測時刻、ISO UTC） */
   observationTimeIso: string | null;
   fetchStatus: DailyPrepWeatherFetchStatus;
   fetchErrorCode?: string | null;

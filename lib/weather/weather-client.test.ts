@@ -1,34 +1,56 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  buildOpenMeteoUrl,
-  parseOpenMeteoResponse,
+  buildOpenWeatherUrl,
+  fetchWeatherFromProvider,
+  parseOpenWeatherResponse,
   validateCoordinates,
 } from "./weather-client";
+import { WEATHER_PROVIDER } from "./weather-constants";
+import { WeatherFetchError } from "./weather-errors";
 
-describe("weather-client", () => {
-  it("builds Open-Meteo URL", () => {
-    const url = buildOpenMeteoUrl({ latitude: 35.68, longitude: 139.65 });
+describe("weather-client (OpenWeather)", () => {
+  const originalKey = process.env.OPENWEATHER_API_KEY;
 
-    expect(url).toContain("api.open-meteo.com");
-    expect(url).toContain("latitude=35.68");
-    expect(url).toContain("relative_humidity_2m");
+  afterEach(() => {
+    if (originalKey === undefined) {
+      delete process.env.OPENWEATHER_API_KEY;
+    } else {
+      process.env.OPENWEATHER_API_KEY = originalKey;
+    }
+    vi.restoreAllMocks();
   });
 
-  it("parses valid Open-Meteo response", () => {
-    const weather = parseOpenMeteoResponse(
-      { current: { temperature_2m: 22.5, relative_humidity_2m: 55 } },
-      { latitude: 35, longitude: 139 },
+  it("builds OpenWeather URL without leaking key into path shape", () => {
+    const url = buildOpenWeatherUrl(
+      { latitude: 34.2386, longitude: 132.5616 },
+      "test-key-only-in-query",
+    );
+
+    expect(url).toContain("api.openweathermap.org");
+    expect(url).toContain("lat=34.2386");
+    expect(url).toContain("units=metric");
+    expect(url).toContain("appid=");
+  });
+
+  it("parses valid OpenWeather response with observation time", () => {
+    const weather = parseOpenWeatherResponse(
+      { main: { temp: 22.5, humidity: 55 }, dt: 1_700_000_000 },
+      { latitude: 34.2, longitude: 132.5 },
       "2026-07-06T10:00:00.000Z",
     );
 
     expect(weather?.ambientTempC).toBe(22.5);
     expect(weather?.ambientHumidityPct).toBe(55);
+    expect(weather?.source).toBe(WEATHER_PROVIDER);
+    expect(weather?.observationTimeIso).toBe(
+      new Date(1_700_000_000 * 1000).toISOString(),
+    );
   });
 
   it("returns null for incomplete response", () => {
     expect(
-      parseOpenMeteoResponse({}, { latitude: 35, longitude: 139 }, "2026-07-06"),
+      parseOpenWeatherResponse({}, { latitude: 35, longitude: 139 }, "2026-07-06"),
     ).toBeNull();
   });
 
@@ -36,5 +58,70 @@ describe("weather-client", () => {
     expect(validateCoordinates(35, 139).valid).toBe(true);
     expect(validateCoordinates(100, 139).valid).toBe(false);
     expect(validateCoordinates(35, 200).valid).toBe(false);
+  });
+
+  it("throws when API key is not configured", async () => {
+    delete process.env.OPENWEATHER_API_KEY;
+
+    await expect(
+      fetchWeatherFromProvider({
+        coordinates: { latitude: 34, longitude: 132 },
+        apiKey: null,
+      }),
+    ).rejects.toMatchObject({ code: "API_KEY_NOT_CONFIGURED" });
+  });
+
+  it("fetches successfully with injected key and fetchImpl", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          main: { temp: 18.2, humidity: 60 },
+          dt: 1_700_000_100,
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+
+    const weather = await fetchWeatherFromProvider({
+      coordinates: { latitude: 34.2386, longitude: 132.5616 },
+      apiKey: "unit-test-key",
+      fetchImpl: fetchImpl as typeof fetch,
+      fetchedAt: "2026-11-23T01:00:00.000Z",
+    });
+
+    expect(weather.ambientTempC).toBe(18.2);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    const calledUrl = String(fetchImpl.mock.calls[0]?.[0]);
+    expect(calledUrl).toContain("openweathermap.org");
+    expect(calledUrl).not.toContain("open-meteo");
+  });
+
+  it("maps timeout to WeatherFetchError", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        }),
+    );
+
+    await expect(
+      fetchWeatherFromProvider({
+        coordinates: { latitude: 34, longitude: 132 },
+        apiKey: "unit-test-key",
+        fetchImpl: fetchImpl as typeof fetch,
+        timeoutMs: 20,
+      }),
+    ).rejects.toBeInstanceOf(WeatherFetchError);
+
+    await expect(
+      fetchWeatherFromProvider({
+        coordinates: { latitude: 34, longitude: 132 },
+        apiKey: "unit-test-key",
+        fetchImpl: fetchImpl as typeof fetch,
+        timeoutMs: 20,
+      }),
+    ).rejects.toMatchObject({ code: "TIMEOUT" });
   });
 });

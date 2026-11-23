@@ -42,7 +42,10 @@ import {
   isD1RequiredForDailyPrep,
   type DailyPrepPersistenceMode,
 } from "@/lib/runtime/daily-prep-persistence";
-import { fetchWeatherFromProvider } from "@/lib/weather/weather-client";
+import {
+  fetchWeatherFromProvider,
+  WeatherFetchError,
+} from "@/lib/weather/weather-client";
 import { KURE_WEATHER_COORDINATES } from "@/types/daily-prep-record";
 import type {
   DailyPrepDoughState11am,
@@ -514,9 +517,17 @@ export async function handleDailyPrepRecordCreateRequest(
       },
       fetchedAt: now,
     });
-    weather = buildWeatherSnapshot(weatherCurrent, null);
-  } catch {
-    weather = buildUnavailableWeatherSnapshot(now, "fetch_failed");
+    weather = buildWeatherSnapshot(weatherCurrent);
+  } catch (error) {
+    const code =
+      error instanceof WeatherFetchError
+        ? error.code === "API_KEY_NOT_CONFIGURED"
+          ? "api_key_not_configured"
+          : error.code === "TIMEOUT"
+            ? "fetch_timeout"
+            : "fetch_failed"
+        : "fetch_failed";
+    weather = buildUnavailableWeatherSnapshot(now, code);
   }
 
   const built = buildDailyPrepRecordFromCompute({
